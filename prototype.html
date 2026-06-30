@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>引力盐 - 户外运动</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --primary:#1A1A2E;
+  --primary-light:#6366F1;
+  --accent:#EF4444;
+  --bg:#F3F4F6;
+  --surface:#FFFFFF;
+  --text:#111827;
+  --text-secondary:#4B5563;
+  --text-tertiary:#9CA3AF;
+  --border:#E5E7EB;
+  --tag-bg:#F3F4F6;
+  --green:#10B981;
+  --orange:#F59E0B;
+  --shadow:0 1px 3px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.1);
+}
+html,body { height:100%; }
+body {
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--text); overflow-x:hidden;
+  max-width:430px; margin:0 auto; position:relative;
+}
+
+/* Status bar */
+.status-bar {
+  height:44px; background:var(--surface); display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; font-size:15px; font-weight:700; position:sticky; top:0; z-index:100;
+}
+
+/* Toast */
+.toast {
+  position:fixed; bottom:72px; left:50%; transform:translateX(-50%) translateY(10px);
+  background:rgba(26,26,46,.9); color:#fff; padding:10px 22px; border-radius:24px;
+  font-size:13px; z-index:500; opacity:0; pointer-events:none; transition:all .3s ease;
+  backdrop-filter:blur(8px);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Pages */
+.page { display:none; padding-bottom:80px; min-height:100vh; }
+.page.active { display:block; }
+
+/* ===================== UNIFIED HEADER ===================== */
+.page-header {
+  padding:16px; position:relative;
+}
+.page-header.routes { background:linear-gradient(180deg,#EEF2FF 0%,var(--bg) 100%); }
+.page-header.needs { background:linear-gradient(180deg,#FDF2F8 0%,var(--bg) 100%); }
+.page-header.equip { background:linear-gradient(180deg,#ECFDF5 0%,var(--bg) 100%); }
+
+.header-card {
+  background:var(--surface); border-radius:20px; padding:20px;
+  box-shadow:var(--shadow); border:1px solid var(--border);
+  display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;
+}
+.header-card .deco {
+  position:absolute; top:-20px; right:-20px; width:80px; height:80px;
+  border-radius:50%; opacity:.1;
+}
+.header-card.routes .deco { background:linear-gradient(135deg,#667eea,#764ba2); }
+.header-card.needs .deco { background:linear-gradient(135deg,#f093fb,#f5576c); }
+.header-card.equip .deco { background:linear-gradient(135deg,#43e97b,#38f9d7); }
+.header-icon {
+  width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0; color:#fff;
+}
+.header-icon.routes { background:linear-gradient(135deg,#667eea,#764ba2); }
+.header-icon.needs { background:linear-gradient(135deg,#f093fb,#f5576c); }
+.header-icon.equip { background:linear-gradient(135deg,#43e97b,#38f9d7); }
+.header-text { flex:1; }
+.header-title { font-size:20px; font-weight:800; line-height:1.2; }
+.header-sub { font-size:12px; color:var(--text-secondary); margin-top:3px; }
+
+/* ===================== FILTER OVERLAY ===================== */
+.filter-wrap { position:relative; z-index:40; margin:0 16px 12px; }
+.filter-bar {
+  background:var(--surface); border-radius:14px; padding:10px 14px;
+  box-shadow:var(--shadow); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+}
+.filter-bar .fb-left { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary); font-weight:500; }
+.filter-bar .fb-count { font-size:11px; color:var(--text-tertiary); margin-left:6px; }
+.filter-bar .fb-arrow { font-size:11px; color:var(--text-tertiary); transition:transform .25s; }
+.filter-bar .fb-arrow.up { transform:rotate(180deg); }
+
+/* Filter dropdown overlay */
+.filter-dropdown {
+  position:absolute; top:calc(100% + 6px); left:0; right:0;
+  background:var(--surface); border-radius:16px;
+  box-shadow:var(--shadow-lg); border:1px solid var(--border);
+  padding:14px; z-index:50; display:none; max-height:70vh; overflow-y:auto;
+}
+.filter-dropdown.show { display:block; animation:dropIn .2s ease; }
+@keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.filter-row { margin-bottom:12px; }
+.filter-row:last-child { margin-bottom:0; }
+.filter-label { font-size:10px; color:var(--text-tertiary); margin-bottom:6px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+.filter-options { display:flex; flex-wrap:wrap; gap:6px; }
+.filter-pill {
+  padding:5px 11px; border-radius:12px; font-size:12px; background:var(--tag-bg); color:var(--text-secondary);
+  cursor:pointer; border:none; white-space:nowrap; transition:all .15s; font-weight:500;
+}
+.filter-pill:hover { background:#E5E7EB; }
+.filter-pill.active { background:var(--primary); color:#fff; }
+
+/* Active filter chips */
+.chips-bar {
+  display:flex; align-items:center; gap:6px; padding:0 16px 10px;
+  overflow-x:auto; scrollbar-width:none;
+}
+.chips-bar::-webkit-scrollbar { display:none; }
+.chip {
+  display:flex; align-items:center; gap:4px; padding:4px 10px; background:var(--primary-light);
+  color:#fff; border-radius:10px; font-size:11px; white-space:nowrap; flex-shrink:0;
+}
+.chip .x { font-size:10px; cursor:pointer; opacity:.8; }
+.chip-clear { font-size:11px; color:var(--text-tertiary); white-space:nowrap; flex-shrink:0; cursor:pointer; }
+
+/* Filter overlay backdrop */
+.filter-backdrop {
+  position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.2);
+  z-index:35; display:none;
+}
+.filter-backdrop.show { display:block; }
+
+/* ===================== RESULT COUNT ===================== */
+.result-bar {
+  padding:0 16px 10px; font-size:13px; color:var(--text-secondary); font-weight:500;
+}
+.result-bar .num { color:var(--primary-light); font-weight:700; }
+
+/* ===================== CARDS (unified) ===================== */
+.card-list { padding:0 16px 12px; }
+.card {
+  background:var(--surface); border-radius:16px; padding:14px; margin-bottom:10px;
+  box-shadow:var(--shadow); border:1px solid var(--border);
+}
+
+/* Route card */
+.route-header { display:flex; gap:12px; margin-bottom:10px; }
+.route-thumb {
+  width:68px; height:68px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:28px;
+}
+.route-meta { flex:1; min-width:0; }
+.route-title-row { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; margin-bottom:3px; }
+.route-title { font-size:15px; font-weight:700; line-height:1.3; }
+.route-star { font-size:12px; color:var(--orange); font-weight:600; flex-shrink:0; }
+.route-stats { display:flex; gap:10px; font-size:12px; color:var(--text-secondary); margin-bottom:5px; }
+.route-stats .dist { color:var(--primary-light); font-weight:500; }
+.route-tag-row { display:flex; flex-wrap:wrap; gap:4px; }
+.tag { font-size:10px; padding:3px 8px; border-radius:8px; background:var(--tag-bg); color:var(--text-secondary); font-weight:500; }
+.tag.purple { background:#F3E8FF; color:#7C3AED; }
+.tag.blue { background:#DBEAFE; color:#2563EB; }
+.tag.green { background:#D1FAE5; color:#059669; }
+.tag.orange { background:#FEF3C7; color:#D97706; }
+.tag.pink { background:#FCE7F3; color:#DB2777; }
+
+.route-pois { margin:10px 0; padding:10px; background:var(--bg); border-radius:10px; }
+.route-poi { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+
+.route-actions { display:flex; gap:8px; }
+.route-actions .btn {
+  flex:1; padding:9px 0; border-radius:10px; font-size:13px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:all .15s;
+  display:flex; align-items:center; justify-content:center; gap:4px; color:var(--text-secondary);
+}
+.route-actions .btn:hover { background:#F9FAFB; }
+.route-actions .btn.active-want { background:#FEF2F2; color:var(--accent); border-color:#FECACA; }
+.route-actions .btn.active-been { background:#ECFDF5; color:var(--green); border-color:#A7F3D0; }
+.route-actions .btn.primary { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* Need card */
+.need-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.need-avatar {
+  width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:17px; flex-shrink:0;
+}
+.need-user { flex:1; min-width:0; }
+.need-name-row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-bottom:2px; }
+.need-name { font-size:15px; font-weight:600; }
+.badge { font-size:10px; padding:2px 6px; border-radius:8px; font-weight:600; }
+.badge.lv { background:#FEF3C7; color:#D97706; }
+.badge.credit { background:#ECFDF5; color:#059669; }
+.badge.status { background:#ECFDF5; color:var(--green); font-size:11px; padding:3px 8px; }
+.need-time { font-size:12px; color:var(--text-secondary); }
+.need-title { font-size:16px; font-weight:700; margin-bottom:8px; line-height:1.4; }
+.need-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+.need-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:14px; }
+.need-footer { display:flex; align-items:center; justify-content:space-between; }
+.need-count { font-size:12px; color:var(--text-tertiary); }
+.btn-primary {
+  padding:9px 20px; background:var(--primary); color:#fff; border:none; border-radius:10px;
+  font-size:14px; font-weight:600; cursor:pointer;
+}
+
+/* Equip */
+.cat-bar {
+  display:flex; gap:8px; padding:0 16px 12px; overflow-x:auto; scrollbar-width:none;
+}
+.cat-bar::-webkit-scrollbar { display:none; }
+.cat-btn {
+  padding:7px 14px; border-radius:20px; font-size:13px; background:var(--surface); color:var(--text-secondary);
+  cursor:pointer; white-space:nowrap; border:1px solid var(--border); font-weight:500;
+  box-shadow:var(--shadow);
+}
+.cat-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+.equip-header { display:flex; gap:12px; margin-bottom:12px; }
+.equip-rank {
+  width:28px; height:28px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-weight:800; font-size:13px; flex-shrink:0;
+}
+.rank-gold { background:linear-gradient(135deg,#FFD700,#FFA500); color:#fff; }
+.rank-silver { background:linear-gradient(135deg,#C0C0C0,#A0A0A0); color:#fff; }
+.rank-bronze { background:linear-gradient(135deg,#CD7F32,#B87333); color:#fff; }
+.rank-normal { background:var(--tag-bg); color:var(--text-secondary); }
+.equip-icon {
+  width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:24px; flex-shrink:0;
+}
+.equip-info { flex:1; min-width:0; }
+.equip-name { font-size:15px; font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.equip-badge { font-size:10px; padding:2px 6px; border-radius:6px; font-weight:700; }
+.equip-badge.must { background:#FEE2E2; color:#DC2626; }
+.equip-badge.rec { background:#FEF3C7; color:#D97706; }
+.equip-rating { font-size:12px; color:var(--orange); font-weight:600; margin-bottom:4px; }
+.equip-tag-row { display:flex; flex-wrap:wrap; gap:4px; }
+.et { font-size:11px; padding:3px 8px; border-radius:8px; background:#E0E7FF; color:var(--primary-light); font-weight:500; }
+
+.equip-qa { border-top:1px solid var(--border); padding-top:12px; }
+.qa-header { display:flex; justify-content:space-between; margin-bottom:10px; font-size:13px; color:var(--text-secondary); font-weight:600; }
+.qa-count { font-size:12px; color:var(--text-tertiary); font-weight:400; }
+.qa-item { margin-bottom:12px; }
+.qa-q { font-size:13px; font-weight:600; margin-bottom:5px; }
+.qa-a { font-size:12px; color:var(--text-secondary); line-height:1.5; padding-left:16px; }
+.qa-user { display:flex; align-items:center; gap:6px; margin-top:4px; padding-left:16px; }
+.qa-av { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:9px; }
+.qa-n { font-size:11px; color:var(--text-secondary); }
+.qa-lvl { font-size:9px; background:#FEF3C7; color:#D97706; padding:1px 4px; border-radius:6px; font-weight:600; }
+.qa-likes { font-size:11px; color:var(--text-tertiary); margin-left:auto; }
+.qa-best { font-size:10px; background:#ECFDF5; color:var(--green); padding:1px 5px; border-radius:6px; font-weight:600; }
+.equip-actions { display:flex; gap:8px; margin-top:12px; }
+.equip-actions .btn {
+  flex:1; padding:10px; border-radius:10px; font-size:13px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+}
+.equip-actions .btn.dark { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+/* Detail */
+.detail-nav {
+  height:48px; background:var(--surface); display:flex; align-items:center;
+  padding:0 12px; gap:8px; position:sticky; top:44px; z-index:99;
+}
+.detail-nav .back { font-size:20px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+.detail-nav .back:hover { background:var(--tag-bg); }
+.detail-nav .title { font-size:16px; font-weight:600; flex:1; text-align:center; margin-right:40px; }
+.detail-hero { width:100%; height:260px; background:linear-gradient(135deg,#FFD93D,#FF8C42); display:flex; align-items:center; justify-content:center; font-size:72px; }
+.detail-body { padding:16px; }
+.detail-user { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.d-av { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; }
+.d-info { flex:1; }
+.d-name { font-size:15px; font-weight:600; }
+.d-meta { font-size:12px; color:var(--text-secondary); }
+.d-hi { padding:6px 14px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; }
+.detail-text { font-size:15px; line-height:1.7; margin-bottom:14px; }
+.detail-tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.detail-actions {
+  display:flex; justify-content:space-around; padding:12px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:14px;
+}
+.da { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; color:var(--text-secondary); cursor:pointer; }
+.da i { font-size:22px; }
+.comments-title { padding:10px 16px; font-size:14px; font-weight:600; border-bottom:1px solid var(--border); }
+.comment { display:flex; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); }
+.c-av { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; flex-shrink:0; }
+.c-body { flex:1; }
+.c-name { font-size:13px; font-weight:600; margin-bottom:2px; }
+.c-text { font-size:13px; line-height:1.5; margin-bottom:3px; }
+.c-time { font-size:11px; color:var(--text-tertiary); }
+.comment-bar {
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px;
+  background:var(--surface); border-top:1px solid var(--border); padding:8px 16px;
+  display:flex; align-items:center; gap:10px; z-index:150;
+}
+.comment-bar input { flex:1; padding:9px 14px; border:1px solid var(--border); border-radius:18px; font-size:14px; outline:none; background:var(--bg); }
+.comment-bar .actions { display:flex; gap:14px; font-size:20px; color:var(--text-secondary); }
+
+/* Modal */
+.modal-overlay {
+  position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.45);
+  z-index:300; display:none; align-items:flex-end; justify-content:center;
+}
+.modal-overlay.active { display:flex; }
+.modal-sheet {
+  background:var(--surface); width:100%; max-width:430px; border-radius:20px 20px 0 0;
+  padding:20px; max-height:85vh; overflow-y:auto; animation:slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+.modal-sub { font-size:13px; color:var(--text-secondary); margin-bottom:16px; }
+.modal-x { position:absolute; top:16px; right:16px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:16px; color:var(--text-tertiary); cursor:pointer; }
+.modal-x:hover { background:var(--tag-bg); }
+.form-group { margin-bottom:14px; }
+
+/* ===== Detail Page (小红书风格) ===== */
+.detail-page {
+  position:fixed; top:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:430px; height:100vh; background:var(--bg);
+  z-index:500; display:none; flex-direction:column; overflow:hidden;
+}
+.detail-page.active { display:flex; animation:fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.detail-header {
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 16px; background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.detail-header .back { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; }
+.detail-header .back:hover { background:var(--tag-bg); }
+.detail-header .back svg { width:20px; height:20px; stroke:var(--text); stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.detail-header .dh-title { font-size:15px; font-weight:600; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.detail-header .dh-more { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; color:var(--text-secondary); font-size:18px; }
+
+.detail-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
+.detail-cover {
+  width:100%; height:260px; display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.detail-cover .dc-emoji { font-size:80px; }
+.detail-cover .dc-dots { position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+.detail-cover .dc-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.5); }
+.detail-cover .dc-dot.active { background:#fff; }
+
+.detail-user {
+  display:flex; align-items:center; gap:10px; padding:14px 16px;
+}
+.detail-user .du-avatar {
+  width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:#fff; flex-shrink:0;
+}
+.detail-user .du-info { flex:1; }
+.detail-user .du-name { font-size:14px; font-weight:600; color:var(--text); }
+.detail-user .du-time { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+.detail-user .du-follow {
+  padding:5px 14px; border-radius:14px; border:1px solid var(--primary);
+  color:var(--primary); font-size:12px; font-weight:600; background:transparent; cursor:pointer;
+}
+.detail-user .du-follow:hover { background:var(--primary-light); }
+
+.detail-title { font-size:18px; font-weight:700; color:var(--text); padding:0 16px 10px; line-height:1.5; }
+.detail-body { font-size:14px; color:var(--text-secondary); padding:0 16px 14px; line-height:1.7; white-space:pre-wrap; }
+.detail-body b, .detail-body strong { color:var(--text); }
+
+.detail-tags { display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 14px; }
+.detail-tags .dtag { font-size:13px; color:var(--primary); }
+
+.detail-meta-row {
+  display:flex; align-items:center; gap:14px; padding:0 16px 14px;
+  font-size:12px; color:var(--text-tertiary);
+}
+.detail-meta-row .dm-item { display:flex; align-items:center; gap:4px; }
+
+.detail-divider { height:8px; background:var(--bg); margin:0; border:none; }
+
+.detail-section-title {
+  font-size:14px; font-weight:700; color:var(--text); padding:14px 16px 8px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.detail-section-title .count { font-size:12px; color:var(--text-tertiary); font-weight:400; }
+
+/* Comments */
+.comment-item { display:flex; gap:10px; padding:10px 16px; }
+.comment-item .c-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; flex-shrink:0; background:var(--primary-light); }
+.comment-item .c-body { flex:1; }
+.comment-item .c-name { font-size:13px; font-weight:600; color:var(--text); }
+.comment-item .c-text { font-size:13px; color:var(--text-secondary); margin-top:2px; line-height:1.5; }
+.comment-item .c-actions { display:flex; gap:12px; margin-top:4px; font-size:11px; color:var(--text-tertiary); }
+
+/* Bottom action bar */
+.detail-bottom {
+  position:sticky; bottom:0; left:0; right:0;
+  display:flex; align-items:center; gap:10px;
+  padding:8px 16px 12px; background:rgba(255,255,255,.95); backdrop-filter:blur(10px);
+  border-top:1px solid var(--border); z-index:10;
+}
+.detail-bottom .db-input {
+  flex:1; padding:8px 14px; border-radius:18px; background:var(--bg);
+  border:1px solid var(--border); font-size:13px; color:var(--text-secondary);
+}
+.detail-bottom .db-btn {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  font-size:11px; color:var(--text-secondary); cursor:pointer; min-width:36px;
+}
+.detail-bottom .db-btn svg { width:22px; height:22px; stroke:var(--text-secondary); stroke-width:2; fill:none; }
+.detail-bottom .db-btn.active svg { stroke:var(--primary); fill:var(--primary-light); }
+.detail-bottom .db-btn.active { color:var(--primary); }
+.detail-bottom .db-join {
+  padding:8px 18px; border-radius:18px; background:var(--primary);
+  color:#fff; font-size:13px; font-weight:600; border:none; cursor:pointer;
+}
+.form-label { font-size:13px; font-weight:600; margin-bottom:6px; display:block; color:var(--text-secondary); }
+.form-input, .form-textarea {
+  width:100%; padding:11px; border:1px solid var(--border); border-radius:10px;
+  font-size:14px; font-family:inherit; background:var(--bg);
+}
+.form-textarea { min-height:72px; resize:none; }
+.submit-btn {
+  width:100%; padding:13px; background:var(--primary); color:#fff; border:none;
+  border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; margin-top:4px;
+}
+.star-rating { display:flex; gap:6px; justify-content:center; margin:12px 0; }
+.star-rating .star { font-size:36px; color:#E5E7EB; cursor:pointer; transition:color .15s; }
+.star-rating .star.active { color:var(--orange); }
+
+.people-list { margin-top:8px; }
+.people-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+.people-item:last-child { border-bottom:none; }
+.p-av { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:600; flex-shrink:0; }
+.p-info { flex:1; min-width:0; }
+.p-name { font-size:14px; font-weight:600; margin-bottom:1px; }
+.p-desc { font-size:12px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-btn { padding:6px 12px; background:var(--primary); color:#fff; border-radius:10px; font-size:12px; font-weight:600; border:none; cursor:pointer; }
+
+/* Bottom tab */
+.bottom-tab {
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px;
+  height:56px; background:var(--surface); border-top:1px solid var(--border);
+  display:flex; align-items:center; z-index:200;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tab-item {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; cursor:pointer; height:100%; position:relative;
+}
+.tab-item .tw {
+  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:8px; transition:all .15s;
+}
+.tab-item .icon { display:flex; align-items:center; justify-content:center; }
+.tab-item .icon svg { width:20px; height:20px; stroke:var(--text-secondary); stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; transition:all .15s; }
+.tab-item .label { font-size:10px; color:var(--text-tertiary); transition:all .15s; }
+.tab-item.active .tw { background:var(--primary); }
+.tab-item.active .icon svg { stroke:#fff; }
+.tab-item.active .label { color:var(--primary); font-weight:600; }
+
+/* Map */
+.map-box {
+  height:calc(100vh - 300px); background:linear-gradient(135deg,#E0E7FF,#DBEAFE);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:var(--text-secondary); gap:10px; margin:0 16px; border-radius:16px;
+  position:relative; overflow:hidden;
+}
+.map-box .mi { font-size:56px; opacity:.35; }
+.map-legend { position:absolute; bottom:12px; left:12px; right:12px; background:rgba(255,255,255,.9); backdrop-filter:blur(6px); border-radius:10px; padding:8px 10px; display:flex; flex-wrap:wrap; gap:6px 10px; font-size:11px; color:var(--text-secondary); }
+.map-legend .dot { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:3px; }
+.map-pins { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+
+/* Empty */
+.empty { padding:40px 20px; text-align:center; color:var(--text-tertiary); }
+.empty .ei { font-size:48px; margin-bottom:12px; opacity:.5; }
+.empty .et { font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="status-bar"><span>14:14</span><span style="font-size:13px;letter-spacing:2px;">📶 🛜 🔋</span></div>
+
+<!-- ======================== PAGE: ROUTES ======================== -->
+<div class="page active" id="page-routes">
+  <div class="page-header routes">
+    <div class="header-card routes">
+      <div class="deco"></div>
+      <div class="header-icon routes">🗺️</div>
+      <div class="header-text">
+        <div class="header-title">路线+点位</div>
+        <div class="header-sub">发现身边的运动路线，找到同路人</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-wrap" id="routes-filter-wrap">
+    <div class="filter-bar" onclick="toggleFilter('routes')">
+      <div class="fb-left">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span id="routes-filter-summary">全部路线</span>
+        <span class="fb-count" id="routes-result-count"></span>
+      </div>
+      <span class="fb-arrow up" id="routes-arrow">▼</span>
+    </div>
+    <div class="filter-dropdown" id="routes-filter-body">
+      <div class="filter-row"><div class="filter-label">路线类型</div>
+        <div class="filter-options" data-filter="routes" data-key="type">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="citywalk">Citywalk</button>
+          <button class="filter-pill" data-val="cycling">骑行</button>
+          <button class="filter-pill" data-val="hiking">徒步</button>
+          <button class="filter-pill" data-val="running">跑步</button>
+          <button class="filter-pill" data-val="climbing">登山</button>
+          <button class="filter-pill" data-val="skate">滑板</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">场景标签</div>
+        <div class="filter-options" data-filter="routes" data-key="scene">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="art">文艺</button>
+          <button class="filter-pill" data-val="culture">人文</button>
+          <button class="filter-pill" data-val="nature">自然</button>
+          <button class="filter-pill" data-val="night">夜景</button>
+          <button class="filter-pill" data-val="history">历史</button>
+          <button class="filter-pill" data-val="food">美食</button>
+          <button class="filter-pill" data-val="photo">拍照</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">适合人群</div>
+        <div class="filter-options" data-filter="routes" data-key="crowd">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="solo">一人游</button>
+          <button class="filter-pill" data-val="couple">双人/情侣</button>
+          <button class="filter-pill" data-val="kid">带娃</button>
+          <button class="filter-pill" data-val="parent">带父母</button>
+          <button class="filter-pill" data-val="pet">宠物友好</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">距离范围</div>
+        <div class="filter-options" data-filter="routes" data-key="distance">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="d1">1km内</button>
+          <button class="filter-pill" data-val="d3">3km内</button>
+          <button class="filter-pill" data-val="d5">5km内</button>
+          <button class="filter-pill" data-val="d10">10km内</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">预计时长</div>
+        <div class="filter-options" data-filter="routes" data-key="duration">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="t1">1小时内</button>
+          <button class="filter-pill" data-val="t3">1-3小时</button>
+          <button class="filter-pill" data-val="t5">3-5小时</button>
+          <button class="filter-pill" data-val="t5plus">半天以上</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">评分</div>
+        <div class="filter-options" data-filter="routes" data-key="rating">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="r45">4.5分以上</button>
+          <button class="filter-pill" data-val="r40">4.0分以上</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="route-chips" class="chips-bar" style="display:none;"></div>
+  <div class="result-bar" id="routes-result-bar" style="display:none;"></div>
+
+  <div style="padding:0 16px 8px;display:flex;justify-content:flex-end;gap:10px;">
+    <span id="route-view-list" style="cursor:pointer;color:var(--text);font-weight:600;font-size:14px;" onclick="switchRouteView('list')">列表</span>
+    <span style="color:var(--border);">|</span>
+    <span id="route-view-map" style="cursor:pointer;color:var(--text-secondary);font-size:14px;" onclick="switchRouteView('map')">地图</span>
+  </div>
+
+  <div id="route-list-view">
+    <div class="card-list" id="route-list-container"></div>
+  </div>
+  <div id="route-map-view" style="display:none;">
+    <div class="map-box">
+      <svg viewBox="0 0 360 420" style="width:100%;height:100%;position:absolute;top:0;left:0;">
+        <rect width="360" height="420" fill="#DBEAFE"/>
+        <path d="M80 320 Q70 280 85 240 Q75 200 95 170 Q90 130 120 110 Q140 80 180 75 Q220 70 250 90 Q280 85 300 110 Q320 140 315 180 Q330 220 310 260 Q325 300 300 330 Q280 360 240 365 Q200 375 160 360 Q120 355 100 330 Z" fill="#F0F4F8" stroke="#BFDBFE" stroke-width="2"/>
+        <path d="M160 180 Q170 170 180 175 Q190 170 200 180 Q210 190 205 205 Q200 220 185 225 Q170 220 160 205 Q155 190 160 180 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+        <text x="175" y="200" font-size="9" fill="#64748B" text-anchor="middle">二环</text>
+        <path d="M130 150 Q145 140 160 145 Q180 135 200 145 Q220 140 235 155 Q245 175 240 195 Q245 220 230 240 Q215 255 190 260 Q165 255 145 240 Q130 220 130 195 Q125 170 130 150 Z" fill="none" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="140" y="155" font-size="8" fill="#94A3B8">三环</text>
+        <circle cx="175" cy="120" r="4" fill="#FF6B6B"/><text x="175" y="112" font-size="8" fill="#334155" text-anchor="middle">奥森</text>
+        <circle cx="200" cy="160" r="4" fill="#4ECDC4"/><text x="200" y="152" font-size="8" fill="#334155" text-anchor="middle">三里屯</text>
+        <circle cx="160" cy="190" r="4" fill="#FFD93D"/><text x="160" y="182" font-size="8" fill="#334155" text-anchor="middle">故宫</text>
+        <circle cx="230" cy="190" r="4" fill="#A8EDEA"/><text x="230" y="182" font-size="8" fill="#334155" text-anchor="middle">CBD</text>
+        <circle cx="195" cy="210" r="4" fill="#FF8C42"/><text x="195" y="202" font-size="8" fill="#334155" text-anchor="middle">天坛</text>
+        <circle cx="240" cy="150" r="4" fill="#667eea"/><text x="240" y="142" font-size="8" fill="#334155" text-anchor="middle">798</text>
+        <circle cx="220" cy="230" r="4" fill="#43e97b"/><text x="220" y="222" font-size="8" fill="#334155" text-anchor="middle">欢乐谷</text>
+        <circle cx="130" cy="170" r="4" fill="#fa709a"/><text x="130" y="162" font-size="8" fill="#334155" text-anchor="middle">颐和园</text>
+        <circle cx="110" cy="250" r="4" fill="#f093fb"/><text x="110" y="242" font-size="8" fill="#334155" text-anchor="middle">香山</text>
+        <circle cx="250" cy="260" r="4" fill="#38f9d7"/><text x="250" y="252" font-size="8" fill="#334155" text-anchor="middle">亦庄</text>
+      </svg>
+      <div class="map-legend">
+        <span><span class="dot" style="background:#FF6B6B"></span>跑步</span>
+        <span><span class="dot" style="background:#4ECDC4"></span>骑行</span>
+        <span><span class="dot" style="background:#FFD93D"></span>Citywalk</span>
+        <span><span class="dot" style="background:#667eea"></span>徒步</span>
+        <span><span class="dot" style="background:#43e97b"></span>登山</span>
+        <span><span class="dot" style="background:#fa709a"></span>滑板</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE: NEEDS ======================== -->
+<div class="page" id="page-needs">
+  <div class="page-header needs">
+    <div class="header-card needs">
+      <div class="deco"></div>
+      <div class="header-icon needs">🙋‍♀️</div>
+      <div class="header-text">
+        <div class="header-title">发需求</div>
+        <div class="header-sub">精准发布运动组局需求，找到真正匹配的人</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-wrap" id="needs-filter-wrap">
+    <div class="filter-bar" onclick="toggleFilter('needs')">
+      <div class="fb-left">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span id="needs-filter-summary">全部需求</span>
+        <span class="fb-count" id="needs-result-count"></span>
+      </div>
+      <span class="fb-arrow up" id="needs-arrow">▼</span>
+    </div>
+    <div class="filter-dropdown" id="needs-filter-body">
+      <div class="filter-row"><div class="filter-label">运动类型</div>
+        <div class="filter-options" data-filter="needs" data-key="type">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="tennis">网球</button>
+          <button class="filter-pill" data-val="badminton">羽毛球</button>
+          <button class="filter-pill" data-val="cycling">骑行</button>
+          <button class="filter-pill" data-val="hiking">徒步</button>
+          <button class="filter-pill" data-val="citywalk">Citywalk</button>
+          <button class="filter-pill" data-val="running">跑步</button>
+          <button class="filter-pill" data-val="swimming">游泳</button>
+          <button class="filter-pill" data-val="climbing">攀岩</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">细分需求</div>
+        <div class="filter-options" data-filter="needs" data-key="subType">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="partner">互为搭子练习</button>
+          <button class="filter-pill" data-val="class">报课/拼课</button>
+          <button class="filter-pill" data-val="coach">找陪练</button>
+          <button class="filter-pill" data-val="instructor">找教练</button>
+          <button class="filter-pill" data-val="match">约比赛</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">水平要求</div>
+        <div class="filter-options" data-filter="needs" data-key="level">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="newbie">纯新手(0基础)</button>
+          <button class="filter-pill" data-val="beginner">入门(1年内)</button>
+          <button class="filter-pill" data-val="intermediate">进阶(1-3年)</button>
+          <button class="filter-pill" data-val="pro">高手(3年以上)</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">费用方式</div>
+        <div class="filter-options" data-filter="needs" data-key="cost">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="aa">AA</button>
+          <button class="filter-pill" data-val="self">自付</button>
+          <button class="filter-pill" data-val="free">免费</button>
+          <button class="filter-pill" data-val="sponsor">我请客</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">性别要求</div>
+        <div class="filter-options" data-filter="needs" data-key="gender">
+          <button class="filter-pill active" data-val="all">不限</button>
+          <button class="filter-pill" data-val="female">仅女生</button>
+          <button class="filter-pill" data-val="male">仅男生</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">时间</div>
+        <div class="filter-options" data-filter="needs" data-key="time">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="today">今天</button>
+          <button class="filter-pill" data-val="weekend">本周末</button>
+          <button class="filter-pill" data-val="weekday">工作日</button>
+          <button class="filter-pill" data-val="anytime">随时</button>
+        </div>
+      </div>
+      <div class="filter-row"><div class="filter-label">人数规模</div>
+        <div class="filter-options" data-filter="needs" data-key="groupSize">
+          <button class="filter-pill active" data-val="all">全部</button>
+          <button class="filter-pill" data-val="one">1v1</button>
+          <button class="filter-pill" data-val="small">小群(3-5人)</button>
+          <button class="filter-pill" data-val="large">大群(5人以上)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="needs-chips" class="chips-bar" style="display:none;"></div>
+  <div class="result-bar" id="needs-result-bar" style="display:none;"></div>
+
+  <div class="card-list" id="need-list-container"></div>
+</div>
+
+<!-- ======================== PAGE: EQUIP ======================== -->
+<div class="page" id="page-equip">
+  <div class="page-header equip">
+    <div class="header-card equip">
+      <div class="deco"></div>
+      <div class="header-icon equip">🎒</div>
+      <div class="header-text">
+        <div class="header-title">新手必买装备榜</div>
+        <div class="header-sub">按必须程度排序，真实场景问答帮你决策</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cat-bar">
+    <button class="cat-btn active" data-cat="cycling" onclick="switchEquipCat('cycling')">🚴 骑行</button>
+    <button class="cat-btn" data-cat="hiking" onclick="switchEquipCat('hiking')">🥾 徒步</button>
+    <button class="cat-btn" data-cat="tennis" onclick="switchEquipCat('tennis')">🎾 网球</button>
+    <button class="cat-btn" data-cat="badminton" onclick="switchEquipCat('badminton')">🏸 羽毛球</button>
+    <button class="cat-btn" data-cat="running" onclick="switchEquipCat('running')">🏃 跑步</button>
+  </div>
+
+  <div class="card-list" id="equip-list-container"></div>
+</div>
+
+<!-- ======================== PAGE: DETAIL ======================== -->
+<div class="page" id="page-detail">
+  <div class="detail-nav">
+    <div class="back" onclick="goBackFromDetail()">←</div>
+    <div class="title">动态详情</div>
+  </div>
+  <div class="detail-hero">🏔️</div>
+  <div class="detail-body">
+    <div class="detail-user">
+      <div class="d-av" style="background:#FF6B6B;">🚶</div>
+      <div class="d-info">
+        <div class="d-name">漫步者小林 <span style="font-size:11px;color:var(--orange);background:#FFF5E6;padding:1px 6px;border-radius:8px;">Lv.3</span></div>
+        <div class="d-meta">2小时前 · 北京 · 户外运动</div>
+      </div>
+      <button class="d-hi" onclick="showToast('已发送打招呼消息')">Hi</button>
+    </div>
+    <div class="detail-text">
+      周末想爬香山看日出！🌅 目前2个人，想再找2-3个搭子一起。<br><br>
+      计划凌晨4点从香山公园东门集合，走缓坡路线，大概1.5小时到山顶。看完日出可以一起去吃早点！<br><br>
+      希望找体力不错、不鸽的朋友～
+    </div>
+    <div class="detail-tags">
+      <span class="tag type">徒步</span>
+      <span class="tag location">香山</span>
+      <span class="tag green">日出</span>
+      <span class="tag cost">AA</span>
+    </div>
+    <div class="detail-actions">
+      <div class="da" onclick="showToast('礼物功能开发中')"><span class="da-icon">🎁</span>礼物</div>
+      <div class="da" onclick="showToast('分享功能开发中')"><span class="da-icon">↗️</span>分享</div>
+      <div class="da" onclick="showToast('查看评论')"><span class="da-icon">💬</span>3</div>
+      <div class="da" onclick="showToast('已点赞')"><span class="da-icon">♡</span>23</div>
+    </div>
+  </div>
+  <div class="comments-title">全部评论 · 3</div>
+  <div class="comments">
+    <div class="comment">
+      <div class="c-av" style="background:#4ECDC4;">🚴</div>
+      <div class="c-body"><div class="c-name">BikeBoy</div><div class="c-text">上次去过，日出真的很绝！建议带件外套，山顶风大</div><div class="c-time">05-08 · 回复</div></div>
+    </div>
+    <div class="comment">
+      <div class="c-av" style="background:#A8EDEA;color:#333;">A</div>
+      <div class="c-body"><div class="c-name">Alice</div><div class="c-text">可以挑战爱谁更多一些系列了！😂</div><div class="c-time">05-21</div></div>
+    </div>
+    <div class="comment">
+      <div class="c-av" style="background:#D299C2;">📷</div>
+      <div class="c-body"><div class="c-name">拍照达人</div><div class="c-text">求带！我可以帮大家拍日出合影📸</div><div class="c-time">1小时前</div></div>
+    </div>
+  </div>
+  <div style="height:60px;"></div>
+  <div class="comment-bar">
+    <input type="text" placeholder="说点什么..." onkeydown="if(event.key==='Enter'){showToast('评论已发送');this.value='';}">
+    <div class="actions">
+      <span onclick="showToast('礼物功能开发中')">🎁</span>
+      <span onclick="showToast('分享功能开发中')">↗️</span>
+      <span onclick="showToast('查看评论')">💬</span>
+      <span onclick="showToast('已点赞')">♡</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== BOTTOM TAB ======================== -->
+<div class="bottom-tab" id="bottom-tab">
+  <div class="tab-item active" onclick="switchMainTab('routes')">
+    <div class="tw"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/></svg></span></div>
+    <div class="label">路线</div>
+  </div>
+  <div class="tab-item" onclick="switchMainTab('needs')">
+    <div class="tw"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></span></div>
+    <div class="label">需求</div>
+  </div>
+  <div class="tab-item" onclick="switchMainTab('equip')">
+    <div class="tw"><span class="icon"><svg viewBox="0 0 24 24"><path d="M6 9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M12 3v3M8 6h8"/></svg></span></div>
+    <div class="label">装备</div>
+  </div>
+</div>
+
+<!-- ======================== MODALS ======================== -->
+<div class="modal-overlay" id="modal-wantgo">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-title" id="wantgo-title">想去</div>
+    <div class="modal-sub" id="wantgo-subtitle">标记后其他用户可以看到你的计划</div>
+    <div class="modal-x" onclick="closeModal('modal-wantgo')">✕</div>
+    <div class="form-group">
+      <label class="form-label">简要说明（选填）</label>
+      <textarea class="form-textarea" id="wantgo-note" placeholder="比如：这周末有空，想找人一起..."></textarea>
+    </div>
+    <button class="submit-btn" onclick="submitWantGo()">确认标记</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-wantpeople">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-title">想去的人</div>
+    <div class="modal-sub">找到计划相同的人，一起出发</div>
+    <div class="modal-x" onclick="closeModal('modal-wantpeople')">✕</div>
+    <div class="people-list" id="wantpeople-list"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-join">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-title">申请加入</div>
+    <div class="modal-x" onclick="closeModal('modal-join')">✕</div>
+    <div id="join-content" style="margin-bottom:14px;"></div>
+    <div class="form-group">
+      <label class="form-label">留言（选填）</label>
+      <textarea class="form-textarea" placeholder="简单介绍一下自己，让对方更了解你..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">联系方式</label>
+      <input type="text" class="form-input" placeholder="微信号 / 手机号">
+    </div>
+    <button class="submit-btn" onclick="submitJoin()">提交申请</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-rating">
+  <div class="modal-sheet" style="position:relative;">
+    <div class="modal-title">评分</div>
+    <div class="modal-x" onclick="closeModal('modal-rating')">✕</div>
+    <div style="font-size:13px;color:var(--text-secondary);text-align:center;margin-bottom:4px;">装备：<strong id="rating-target" style="color:var(--text);"></strong></div>
+    <div class="star-rating" id="star-rating">
+      <span class="star" data-val="1">★</span>
+      <span class="star" data-val="2">★</span>
+      <span class="star" data-val="3">★</span>
+      <span class="star" data-val="4">★</span>
+      <span class="star" data-val="5">★</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">晒图</label>
+      <div onclick="showToast('图片上传功能开发中')" style="width:100%;height:90px;border:2px dashed var(--border);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-tertiary);gap:4px;cursor:pointer;">
+        <span style="font-size:22px;">📷</span><span style="font-size:12px;">点击上传图片</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">评价</label>
+      <textarea class="form-textarea" placeholder="写下你的使用体验..."></textarea>
+    </div>
+    <button class="submit-btn" onclick="submitRating()">提交评分</button>
+  </div>
+</div>
+
+<!-- ===== Route Detail Page ===== -->
+<div class="detail-page" id="route-detail-page">
+  <div class="detail-header">
+    <div class="back" onclick="closeDetailPage('route-detail-page')"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+    <div class="dh-title" id="rd-title">路线详情</div>
+    <div class="dh-more">⋯</div>
+  </div>
+  <div class="detail-scroll" id="rd-scroll">
+    <div class="detail-cover" id="rd-cover"><span class="dc-emoji" id="rd-emoji"></span></div>
+    <div class="detail-user">
+      <div class="du-avatar" id="rd-uavatar">🚶</div>
+      <div class="du-info">
+        <div class="du-name" id="rd-uname">引力盐官方</div>
+        <div class="du-time" id="rd-utime">推荐路线 · 官方精选</div>
+      </div>
+      <button class="du-follow">关注</button>
+    </div>
+    <div class="detail-title" id="rd-dtitle"></div>
+    <div class="detail-body" id="rd-body"></div>
+    <div class="detail-tags" id="rd-tags"></div>
+    <div class="detail-meta-row">
+      <span class="dm-item" id="rd-date">06-30 发布</span>
+      <span class="dm-item" id="rd-loc">📍 北京</span>
+    </div>
+    <div class="detail-divider"></div>
+    <div class="detail-section-title">评论 <span class="count" id="rd-ccount">(12)</span></div>
+    <div id="rd-comments"></div>
+  </div>
+  <div class="detail-bottom">
+    <div class="db-input">说点什么...</div>
+    <div class="db-btn" id="rd-like" onclick="toggleDetailLike('route')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="rd-lcount">23</span></div>
+    <div class="db-btn"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>8</span></div>
+    <div class="db-btn"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>分享</span></div>
+  </div>
+</div>
+
+<!-- ===== Need Detail Page ===== -->
+<div class="detail-page" id="need-detail-page">
+  <div class="detail-header">
+    <div class="back" onclick="closeDetailPage('need-detail-page')"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+    <div class="dh-title" id="nd-title">需求详情</div>
+    <div class="dh-more">⋯</div>
+  </div>
+  <div class="detail-scroll" id="nd-scroll">
+    <div class="detail-user" style="padding-top:16px;">
+      <div class="du-avatar" id="nd-uavatar"></div>
+      <div class="du-info">
+        <div class="du-name" id="nd-uname"></div>
+        <div class="du-time" id="nd-utime"></div>
+      </div>
+      <button class="du-follow">关注</button>
+    </div>
+    <div class="detail-title" id="nd-dtitle"></div>
+    <div class="detail-body" id="nd-body"></div>
+    <div class="detail-tags" id="nd-tags"></div>
+    <div class="detail-meta-row">
+      <span class="dm-item" id="nd-date"></span>
+      <span class="dm-item" id="nd-loc">📍 北京</span>
+    </div>
+    <div class="detail-divider"></div>
+    <div class="detail-section-title">评论 <span class="count" id="nd-ccount">(5)</span></div>
+    <div id="nd-comments"></div>
+  </div>
+  <div class="detail-bottom">
+    <div class="db-input">说点什么...</div>
+    <div class="db-btn" id="nd-like" onclick="toggleDetailLike('need')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="nd-lcount">3</span></div>
+    <div class="db-btn"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>2</span></div>
+    <button class="db-join" onclick="joinFromDetail()">申请加入</button>
+  </div>
+</div>
+
+<!-- Filter backdrop -->
+<div class="filter-backdrop" id="filter-backdrop" onclick="closeAllFilters()"></div>
+
+<script>
+// ===================== TOAST =====================
+function showToast(msg) {
+  let t = document.getElementById('global-toast');
+  if (!t) { t = document.createElement('div'); t.id = 'global-toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.innerText = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ===================== DATA =====================
+const routesData = [
+  { id:'r1', title:'奥森公园晨跑路线', rating:4.8, ratingCount:342, distance:'5.2km', duration:'约45分钟', distLabel:'距你1.2km', type:'running', scene:'nature', crowd:'solo', tags:[{text:'一人游',cls:'purple'},{text:'自然',cls:'green'}], imgBg:'linear-gradient(135deg,#34C759,#30D158)', imgEmoji:'🌳', pois:[{icon:'📍',text:'沿途打卡：湖边观景台 · 银杏大道 · 鸟巢远景'},{icon:'☕',text:'吃喝：奥森南门咖啡车'}], wantCount:23 },
+  { id:'r2', title:'长安街夜骑线', rating:4.9, ratingCount:518, distance:'12km', duration:'约60分钟', distLabel:'距你3.5km', type:'cycling', scene:'night', crowd:'couple', tags:[{text:'双人',cls:'purple'},{text:'夜景',cls:'blue'}], imgBg:'linear-gradient(135deg,#FF6B6B,#EE5A6F)', imgEmoji:'🚲', pois:[{icon:'📍',text:'沿途打卡：天安门夜景 · 王府井'},{icon:'☕',text:'吃喝：东单小吃街'}], wantCount:45 },
+  { id:'r3', title:'老胡同人文漫步', rating:4.6, ratingCount:198, distance:'3.8km', duration:'约90分钟', distLabel:'距你5.1km', type:'citywalk', scene:'culture', crowd:'couple', tags:[{text:'人文',cls:'blue'},{text:'历史',cls:'green'}], imgBg:'linear-gradient(135deg,#FFD93D,#FF8C42)', imgEmoji:'🏛️', pois:[{icon:'📍',text:'沿途打卡：五道营胡同 · 国子监'},{icon:'☕',text:'吃喝：藏红花餐厅'}], wantCount:18 },
+  { id:'r4', title:'香八拉徒步线', rating:4.7, ratingCount:267, distance:'14km', duration:'约5小时', distLabel:'距你15km', type:'hiking', scene:'nature', crowd:'solo', tags:[{text:'自然',cls:'blue'},{text:'挑战',cls:'orange'}], imgBg:'linear-gradient(135deg,#4ECDC4,#556270)', imgEmoji:'⛰️', pois:[{icon:'📍',text:'沿途打卡：香山邮局 · 好汉坡'},{icon:'☕',text:'吃喝：山顶自带补给'}], wantCount:67 },
+  { id:'r5', title:'798艺术区拍照路线', rating:4.5, ratingCount:156, distance:'2.5km', duration:'约2小时', distLabel:'距你8.3km', type:'citywalk', scene:'art', crowd:'solo', tags:[{text:'文艺',cls:'purple'},{text:'拍照',cls:'pink'}], imgBg:'linear-gradient(135deg,#A8EDEA,#FED6E3)', imgEmoji:'📸', pois:[{icon:'📍',text:'沿途打卡：UCCA尤伦斯 · 佩斯画廊'},{icon:'☕',text:'吃喝：VOYAGE COFFEE'}], wantCount:31 },
+  { id:'r6', title:'朝阳公园滑板环线', rating:4.3, ratingCount:89, distance:'3km', duration:'约40分钟', distLabel:'距你4.2km', type:'skate', scene:'photo', crowd:'kid', tags:[{text:'带娃',cls:'purple'},{text:'拍照',cls:'pink'}], imgBg:'linear-gradient(135deg,#667eea,#764ba2)', imgEmoji:'🛹', pois:[{icon:'📍',text:'沿途打卡：泡泡玛特城市乐园'},{icon:'☕',text:'吃喝：蓝色港湾'}], wantCount:12 },
+  { id:'r7', title:'温榆河骑行绿道', rating:4.6, ratingCount:203, distance:'8km', duration:'约2小时', distLabel:'距你12km', type:'cycling', scene:'nature', crowd:'pet', tags:[{text:'宠物友好',cls:'purple'},{text:'自然',cls:'green'}], imgBg:'linear-gradient(135deg,#43e97b,#38f9d7)', imgEmoji:'🌿', pois:[{icon:'📍',text:'沿途打卡：温榆河大桥 · 草坪露营地'},{icon:'☕',text:'吃喝：绿道驿站'}], wantCount:28 },
+  { id:'r8', title:'景山故宫历史线', rating:4.8, ratingCount:412, distance:'4km', duration:'约3小时', distLabel:'距你6.8km', type:'citywalk', scene:'history', crowd:'parent', tags:[{text:'带父母',cls:'purple'},{text:'历史',cls:'blue'}], imgBg:'linear-gradient(135deg,#f093fb,#f5576c)', imgEmoji:'🏯', pois:[{icon:'📍',text:'沿途打卡：景山公园 · 故宫角楼'},{icon:'☕',text:'吃喝：景山商街'}], wantCount:55 },
+  { id:'r9', title:'香山红叶登山道', rating:4.7, ratingCount:389, distance:'6km', duration:'约3小时', distLabel:'距你18km', type:'climbing', scene:'nature', crowd:'solo', tags:[{text:'自然',cls:'blue'},{text:'挑战',cls:'orange'}], imgBg:'linear-gradient(135deg,#fa709a,#fee140)', imgEmoji:'🍁', pois:[{icon:'📍',text:'沿途打卡：香山北门 · 双清别墅'},{icon:'☕',text:'吃喝：香山饭店'}], wantCount:89 },
+  { id:'r10', title:'三里屯夜跑圈', rating:4.4, ratingCount:167, distance:'5km', duration:'约45分钟', distLabel:'距你2.1km', type:'running', scene:'night', crowd:'couple', tags:[{text:'夜景',cls:'blue'},{text:'美食',cls:'orange'}], imgBg:'linear-gradient(135deg,#4facfe,#00f2fe)', imgEmoji:'🏃', pois:[{icon:'📍',text:'沿途打卡：太古里 · 工体北路'},{icon:'☕',text:'吃喝：PageOne咖啡'}], wantCount:34 },
+  { id:'r11', title:'颐和园昆明湖散步', rating:4.9, ratingCount:520, distance:'7km', duration:'约2小时', distLabel:'距你9.5km', type:'citywalk', scene:'culture', crowd:'parent', tags:[{text:'带父母',cls:'purple'},{text:'拍照',cls:'pink'}], imgBg:'linear-gradient(135deg,#89F7FE,#66A6FF)', imgEmoji:'🌊', pois:[{icon:'📍',text:'沿途打卡：十七孔桥 · 佛香阁'},{icon:'☕',text:'吃喝：园内茶社'}], wantCount:76 },
+  { id:'r12', title:'箭扣长城徒步', rating:4.8, ratingCount:298, distance:'10km', duration:'约6小时', distLabel:'距你65km', type:'hiking', scene:'nature', crowd:'solo', tags:[{text:'自然',cls:'blue'},{text:'挑战',cls:'orange'}], imgBg:'linear-gradient(135deg,#D299C2,#FEF9D7)', imgEmoji:'🧗', pois:[{icon:'📍',text:'沿途打卡：正北楼 · 鹰飞倒仰'},{icon:'☕',text:'吃喝：西栅子村农家饭'}], wantCount:41 }
+];
+
+const needsData = [
+  { id:'n1', name:'漫步者小林', avatarBg:'linear-gradient(135deg,#667eea,#764ba2)', avatarEmoji:'🚶', level:3, credit:96, status:'进行中', timeStr:'2小时前', area:'朝阳区', title:'周末胡同Citywalk，求搭子', desc:'周末想逛逛胡同，拍拍照，喝喝咖啡，找同样喜欢慢节奏的朋友一起。', type:'citywalk', subType:'partner', levelReq:'beginner', cost:'aa', gender:'all', time:'weekend', groupSize:'small', tags:[{text:'Citywalk',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'入门',cls:'level'},{text:'AA',cls:'cost'}], applied:5 },
+  { id:'n2', name:'拍照达人', avatarBg:'linear-gradient(135deg,#f093fb,#f5576c)', avatarEmoji:'📷', level:4, credit:98, status:'进行中', timeStr:'5小时前', area:'海淀区', title:'798艺术区拍照Citywalk，找固定搭子', desc:'喜欢街拍和建筑摄影，找同样爱拍照的朋友一起逛798，互相拍人像。', type:'citywalk', subType:'partner', levelReq:'intermediate', cost:'aa', gender:'all', time:'weekend', groupSize:'one', tags:[{text:'Citywalk',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'进阶',cls:'level'},{text:'AA',cls:'cost'}], applied:3 },
+  { id:'n3', name:'羽球小能手', avatarBg:'linear-gradient(135deg,#4facfe,#00f2fe)', avatarEmoji:'🏸', level:2, credit:88, status:'进行中', timeStr:'1天前', area:'通州区', title:'羽毛球新手局，周三晚上常营', desc:'双打3缺1，希望找同样新手水平的朋友一起练习，场地费AA。', type:'badminton', subType:'partner', levelReq:'newbie', cost:'aa', gender:'all', time:'weekday', groupSize:'small', tags:[{text:'羽毛球',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'纯新手',cls:'level'},{text:'AA',cls:'cost'}], applied:8 },
+  { id:'n4', name:'骑行老张', avatarBg:'linear-gradient(135deg,#43e97b,#38f9d7)', avatarEmoji:'🚴', level:5, credit:99, status:'进行中', timeStr:'3小时前', area:'西城区', title:'戒台寺夜骑找搭子，每周三固定', desc:'已有3人小群，想再扩2-3人。均速25左右，爬坡路段互相带一带。', type:'cycling', subType:'partner', levelReq:'intermediate', cost:'free', gender:'all', time:'weekday', groupSize:'small', tags:[{text:'骑行',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'进阶',cls:'level'},{text:'免费',cls:'cost'}], applied:12 },
+  { id:'n5', name:'网球小白', avatarBg:'linear-gradient(135deg,#fa709a,#fee140)', avatarEmoji:'🎾', level:1, credit:85, status:'进行中', timeStr:'2天前', area:'朝阳区', title:'网球0基础，找拼课搭子', desc:'想找人一起拼个一对二的入门课，预算300/课时以内，女生优先。', type:'tennis', subType:'class', levelReq:'newbie', cost:'self', gender:'female', time:'weekend', groupSize:'one', tags:[{text:'网球',cls:'type'},{text:'报课/拼课',cls:'sub'},{text:'纯新手',cls:'level'},{text:'自付',cls:'cost'},{text:'仅女生',cls:'gender'}], applied:2 },
+  { id:'n6', name:'攀岩Alice', avatarBg:'linear-gradient(135deg,#A8EDEA,#7DD3FC)', avatarEmoji:'🧗', level:3, credit:92, status:'进行中', timeStr:'6小时前', area:'海淀区', title:'攀岩馆抱石找搭档，周中晚上', desc:'岩时/岩馆都可以，V2-V3水平，互相保护+一起磕线。', type:'climbing', subType:'partner', levelReq:'intermediate', cost:'aa', gender:'all', time:'weekday', groupSize:'one', tags:[{text:'攀岩',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'进阶',cls:'level'},{text:'AA',cls:'cost'}], applied:4 },
+  { id:'n7', name:'游泳教练王', avatarBg:'linear-gradient(135deg,#89F7FE,#66A6FF)', avatarEmoji:'🏊', level:5, credit:97, status:'进行中', timeStr:'1小时前', area:'朝阳区', title:'游泳私教一对二，找学员拼课', desc:'国职教练，擅长自由泳和蛙泳入门教学，水立方/英东游泳馆均可。', type:'swimming', subType:'instructor', levelReq:'newbie', cost:'self', gender:'all', time:'weekend', groupSize:'one', tags:[{text:'游泳',cls:'type'},{text:'找教练',cls:'sub'},{text:'纯新手',cls:'level'},{text:'自付',cls:'cost'}], applied:1 },
+  { id:'n8', name:'跑步君', avatarBg:'linear-gradient(135deg,#FFD93D,#FF8C42)', avatarEmoji:'🏃', level:4, credit:94, status:'进行中', timeStr:'30分钟前', area:'海淀区', title:'奥森半马训练小队，周末长距离', desc:'每周六奥森南园集合，配速5:30-6:00，目标半马破2。', type:'running', subType:'partner', levelReq:'intermediate', cost:'free', gender:'all', time:'weekend', groupSize:'large', tags:[{text:'跑步',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'进阶',cls:'level'},{text:'免费',cls:'cost'}], applied:15 },
+  { id:'n9', name:'登山老李', avatarBg:'linear-gradient(135deg,#D299C2,#FEF9D7)', avatarEmoji:'⛰️', level:5, credit:99, status:'进行中', timeStr:'4小时前', area:'门头沟', title:'东灵山徒步露营，本周末两天一夜', desc:'已有3人，再找2-3人分担装备。需要有重装经验，自备睡袋帐篷。', type:'hiking', subType:'partner', levelReq:'pro', cost:'aa', gender:'all', time:'weekend', groupSize:'small', tags:[{text:'徒步',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'高手',cls:'level'},{text:'AA',cls:'cost'}], applied:6 },
+  { id:'n10', name:'滑板少年', avatarBg:'linear-gradient(135deg,#667eea,#764ba2)', avatarEmoji:'🛹', level:2, credit:86, status:'进行中', timeStr:'1天前', area:'朝阳区', title:'找滑板搭子，朝阳公园练招', desc:'刚学会Ollie，想找水平差不多的朋友一起练招、互相拍视频。', type:'skate', subType:'partner', levelReq:'beginner', cost:'free', gender:'all', time:'weekday', groupSize:'one', tags:[{text:'滑板',cls:'type'},{text:'互为搭子',cls:'sub'},{text:'入门',cls:'level'},{text:'免费',cls:'cost'}], applied:3 }
+];
+
+const equipData = {
+  cycling:[
+    { id:'e1', rank:1, rankCls:'rank-gold', name:'骑行头盔', badge:'must', badgeText:'必买', rating:4.9, ratingCount:2341, icon:'⛑️', iconBg:'#FEE2E2', tags:['安全必备','¥100-500','MIPS优先'], qas:[
+      { q:'通勤10km，预算200，有什么推荐？', a:'PMT K-15，带MIPS，200出头，性价比之王。', user:'骑行老张', lvl:5, likes:42, best:true },
+      { q:'头围58，戴什么尺码？', a:'选L码，大多数品牌58对应L，但建议试戴。', user:'BikeBoy', lvl:3, likes:18, best:false }
+    ]},
+    { id:'e2', rank:2, rankCls:'rank-silver', name:'骑行前灯+尾灯', badge:'must', badgeText:'必买', rating:4.8, ratingCount:1892, icon:'💡', iconBg:'#FEF3C7', tags:['夜骑必备','¥50-200','USB充电'], qas:[]},
+    { id:'e3', rank:3, rankCls:'rank-bronze', name:'骑行服', badge:'rec', badgeText:'推荐', rating:4.5, ratingCount:987, icon:'👕', iconBg:'#E0F2FE', tags:['排汗透气','¥150-800','padded坐垫'], qas:[{ q:'入门有必要上背带款吗？', a:'长途建议上，短途普通款够了。背带款不勒肚子，舒适度好很多。', user:'骑行老张', lvl:4, likes:27, best:true }]},
+    { id:'e4', rank:4, rankCls:'rank-normal', name:'骑行手套', badge:'rec', badgeText:'推荐', rating:4.3, ratingCount:654, icon:'🧤', iconBg:'#F3E8FF', tags:['减震防滑','¥30-150','半指/全指'], qas:[{ q:'夏天戴半指还是全指？', a:'市区半指舒服，长途/山路全指保护性好。', user:'BikeBoy', lvl:3, likes:12, best:false }]}
+  ],
+  hiking:[
+    { id:'h1', rank:1, rankCls:'rank-gold', name:'登山鞋', badge:'must', badgeText:'必买', rating:4.9, ratingCount:1523, icon:'🥾', iconBg:'#D1FAE5', tags:['防水防滑','¥300-1500','V底优先'], qas:[{ q:'低帮还是高帮？', a:'单日低帮够，重装或多日建议高帮保护脚踝。', user:'山友老李', lvl:5, likes:56, best:true }]},
+    { id:'h2', rank:2, rankCls:'rank-silver', name:'登山包', badge:'must', badgeText:'必买', rating:4.7, ratingCount:1102, icon:'🎒', iconBg:'#FEF3C7', tags:['背负系统','¥200-800','20-35L'], qas:[]}
+  ],
+  tennis:[
+    { id:'t1', rank:1, rankCls:'rank-gold', name:'网球拍', badge:'must', badgeText:'必买', rating:4.8, ratingCount:2100, icon:'🎾', iconBg:'#D1FAE5', tags:['入门款','¥200-600','大拍面'], qas:[{ q:'纯新手选多大拍面？', a:'100-105平方英寸，甜区大容错高。', user:'网球教练王', lvl:5, likes:38, best:true }]}
+  ],
+  badminton:[
+    { id:'b1', rank:1, rankCls:'rank-gold', name:'羽毛球拍', badge:'must', badgeText:'必买', rating:4.8, ratingCount:3400, icon:'🏸', iconBg:'#FEF3C7', tags:['入门全碳','¥150-400','4U/5U'], qas:[]}
+  ],
+  running:[
+    { id:'ru1', rank:1, rankCls:'rank-gold', name:'跑鞋', badge:'must', badgeText:'必买', rating:4.9, ratingCount:5600, icon:'👟', iconBg:'#DBEAFE', tags:['缓震/支撑','¥300-1000','足型适配'], qas:[{ q:'扁平足选什么类型？', a:'选支撑型(stability)，别选纯缓震。去门店测足型最准。', user:'跑步达人', lvl:5, likes:89, best:true }]}
+  ]
+};
+
+const wantPeopleData = [
+  { name:'Alice', avatarBg:'#667eea', desc:'这周末有空，想找人一起' },
+  { name:'BikeBoy', avatarBg:'#f5576c', desc:'下周三晚上可以' },
+  { name:'Coco', avatarBg:'#4facfe', desc:'随时，求带' },
+  { name:'David', avatarBg:'#43e97b', desc:'周末白天都可以' },
+  { name:'小林', avatarBg:'#667eea', desc:'本周六日出计划' },
+  { name:'拍照达人', avatarBg:'#f093fb', desc:'想拍夜景人像' }
+];
+
+// ===================== STATE =====================
+const appState = {
+  currentTab:'routes',
+  routeFilters:{ type:'all', scene:'all', crowd:'all', distance:'all', duration:'all', rating:'all' },
+  needFilters:{ type:'all', subType:'all', level:'all', cost:'all', gender:'all', time:'all', groupSize:'all' },
+  filterExpanded:{ routes:false, needs:false },
+  routeStates:{},
+  currentEquipCat:'cycling',
+  currentRating:0,
+  currentRouteId:null,
+  currentNeedId:null,
+  prevPage:null
+};
+
+// ===================== RENDER ROUTES =====================
+function renderRoutes() {
+  const container = document.getElementById('route-list-container');
+  const filters = appState.routeFilters;
+  const filtered = routesData.filter(r => {
+    if (filters.type !== 'all' && r.type !== filters.type) return false;
+    if (filters.scene !== 'all' && r.scene !== filters.scene) return false;
+    if (filters.crowd !== 'all' && r.crowd !== filters.crowd) return false;
+    if (filters.rating !== 'all') {
+      if (filters.rating === 'r45' && r.rating < 4.5) return false;
+      if (filters.rating === 'r40' && r.rating < 4.0) return false;
+    }
+    if (filters.distance !== 'all') {
+      const d = parseFloat(r.distLabel.replace(/[^0-9.]/g,''));
+      if (filters.distance === 'd1' && d > 1) return false;
+      if (filters.distance === 'd3' && d > 3) return false;
+      if (filters.distance === 'd5' && d > 5) return false;
+      if (filters.distance === 'd10' && d > 10) return false;
+    }
+    if (filters.duration !== 'all') {
+      const dur = r.duration;
+      const nums = dur.match(/[\d.]+/g);
+      const isHour = dur.includes('小时');
+      const isMin = dur.includes('分钟') || (dur.includes('分') && !dur.includes('小时'));
+      let hours = 0;
+      if (isHour && nums) hours = parseFloat(nums[0]);
+      else if (isMin && nums) hours = parseFloat(nums[0]) / 60;
+      if (filters.duration === 't1' && hours > 1) return false;
+      if (filters.duration === 't3' && (hours < 1 || hours > 3)) return false;
+      if (filters.duration === 't5' && (hours < 3 || hours > 5)) return false;
+      if (filters.duration === 't5plus' && hours < 5) return false;
+    }
+    return true;
+  });
+
+  updateResultCount('routes', filtered.length);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="ei">🔍</div><div class="et">没有符合筛选条件的路线</div></div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => {
+    const st = appState.routeStates[r.id] || {want:false, been:false};
+    const wantCls = st.want ? 'btn active-want' : 'btn';
+    const wantText = st.want ? '❤️ 已想去' : '♡ 想去';
+    const beenCls = st.been ? 'btn active-been' : 'btn';
+    const beenText = st.been ? '✓ 已打卡' : '✓ 已去';
+    const tags = r.tags.map(t => `<span class="tag ${t.cls}">${t.text}</span>`).join('');
+    const pois = r.pois.map(p => `<div class="route-poi">${p.icon} ${p.text}</div>`).join('');
+    return `
+      <div class="card" onclick="openRouteDetail('${r.id}')" style="cursor:pointer;">
+        <div class="route-header">
+          <div class="route-thumb" style="background:${r.imgBg}"><span>${r.imgEmoji}</span></div>
+          <div class="route-meta">
+            <div class="route-title-row"><div class="route-title">${r.title}</div><div class="route-star">★ ${r.rating}</div></div>
+            <div class="route-stats"><span>${r.distance}</span><span>${r.duration}</span><span class="dist">${r.distLabel}</span></div>
+            <div class="route-tag-row">${tags}</div>
+          </div>
+        </div>
+        <div class="route-pois">${pois}</div>
+        <div class="route-actions" onclick="event.stopPropagation();">
+          <button class="${wantCls}" onclick="handleWantGo('${r.id}')">${wantText}</button>
+          <button class="${beenCls}" onclick="handleBeen('${r.id}')">${beenText}</button>
+          <button class="btn primary" onclick="openWantPeopleModal('${r.id}')">${r.wantCount + (st.want?1:0)}人想去 →</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===================== RENDER NEEDS =====================
+function renderNeeds() {
+  const container = document.getElementById('need-list-container');
+  const filters = appState.needFilters;
+  const filtered = needsData.filter(n => {
+    if (filters.type !== 'all' && n.type !== filters.type) return false;
+    if (filters.subType !== 'all' && n.subType !== filters.subType) return false;
+    if (filters.level !== 'all' && n.levelReq !== filters.level) return false;
+    if (filters.cost !== 'all' && n.cost !== filters.cost) return false;
+    if (filters.gender !== 'all' && n.gender !== filters.gender && n.gender !== 'all') return false;
+    if (filters.time !== 'all' && n.time !== filters.time) return false;
+    if (filters.groupSize !== 'all' && n.groupSize !== filters.groupSize) return false;
+    return true;
+  });
+
+  updateResultCount('needs', filtered.length);
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="ei">🔍</div><div class="et">没有符合筛选条件的需求</div></div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(n => {
+    const tags = n.tags.map(t => `<span class="tag ${t.cls}">${t.text}</span>`).join('');
+    return `
+      <div class="card" onclick="openNeedDetail('${n.id}')" style="cursor:pointer;">
+        <div class="need-header">
+          <div class="need-avatar" style="background:${n.avatarBg}">${n.avatarEmoji}</div>
+          <div class="need-user">
+            <div class="need-name-row">
+              <span class="need-name">${n.name}</span>
+              <span class="badge lv">Lv.${n.level}</span>
+              <span class="badge credit">信用 ${n.credit}</span>
+            </div>
+            <div class="need-time">发布于 ${n.timeStr} · ${n.area}</div>
+          </div>
+          <div class="badge status">${n.status}</div>
+        </div>
+        <div class="need-title">${n.title}</div>
+        <div class="need-tags">${tags}</div>
+        <div class="need-desc">${n.desc}</div>
+        <div class="need-footer" onclick="event.stopPropagation();">
+          <span class="need-count">已有 ${n.applied} 人申请</span>
+          <button class="btn-primary" onclick="openJoinModal('${n.id}')">我要加入</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===================== RENDER EQUIP =====================
+function renderEquip() {
+  const container = document.getElementById('equip-list-container');
+  const cat = appState.currentEquipCat;
+  const items = equipData[cat] || [];
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="ei">🎒</div><div class="et">该分类暂无装备数据</div></div>';
+    return;
+  }
+  container.innerHTML = items.map(e => {
+    const fs = Math.floor(e.rating);
+    const hs = e.rating % 1 >= 0.5;
+    const stars = '★'.repeat(fs) + (hs ? '½' : '') + '☆'.repeat(5 - fs - (hs?1:0));
+    const qas = e.qas.length ? e.qas.map(qa => `
+      <div class="qa-item">
+        <div class="qa-q">Q: ${qa.q}</div>
+        <div class="qa-a">${qa.a}</div>
+        <div class="qa-user">
+          <div class="qa-av" style="background:var(--primary-light);">${qa.user.charAt(0)}</div>
+          <span class="qa-n">${qa.user}</span>
+          <span class="qa-lvl">Lv.${qa.lvl}</span>
+          ${qa.best ? '<span class="qa-best">最佳回答</span>' : ''}
+          <span class="qa-likes">👍 ${qa.likes}</span>
+        </div>
+      </div>
+    `).join('') : '<div style="font-size:12px;color:var(--text-tertiary);padding:6px 0;">暂无提问，成为第一个提问的人 →</div>';
+    return `
+      <div class="card">
+        <div class="equip-header">
+          <div class="equip-rank ${e.rankCls}">${e.rank}</div>
+          <div class="equip-icon" style="background:${e.iconBg};">${e.icon}</div>
+          <div class="equip-info">
+            <div class="equip-name">${e.name} <span class="equip-badge ${e.badge}">${e.badgeText}</span></div>
+            <div class="equip-rating">${stars} ${e.rating} (${e.ratingCount.toLocaleString()}人)</div>
+            <div class="equip-tag-row">${e.tags.map(t=>`<span class="et">${t}</span>`).join('')}</div>
+          </div>
+        </div>
+        <div class="equip-qa">
+          <div class="qa-header"><span>💬 场景问答</span><span class="qa-count">${e.qas.length} 条提问</span></div>
+          ${qas}
+          <div onclick="showToast('提问功能开发中')" style="font-size:12px;color:var(--primary-light);margin-top:8px;cursor:pointer;font-weight:500;">+ 我要提问</div>
+        </div>
+        <div class="equip-actions">
+          <button class="btn" onclick="openRatingModal('${e.name}')">⭐ 评分</button>
+          <button class="btn dark" onclick="showToast('装备详情页开发中')">查看详情 →</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===================== FILTER OVERLAY =====================
+function toggleFilter(page) {
+  const expanded = !appState.filterExpanded[page];
+  appState.filterExpanded[page] = expanded;
+  const body = document.getElementById(page + '-filter-body');
+  const arrow = document.getElementById(page + '-arrow');
+  const backdrop = document.getElementById('filter-backdrop');
+  if (expanded) {
+    // Close other filter first
+    const other = page === 'routes' ? 'needs' : 'routes';
+    if (appState.filterExpanded[other]) toggleFilter(other);
+    body.classList.add('show');
+    arrow.classList.add('up');
+    backdrop.classList.add('show');
+  } else {
+    body.classList.remove('show');
+    arrow.classList.remove('up');
+    backdrop.classList.remove('show');
+  }
+}
+
+function closeAllFilters() {
+  ['routes','needs'].forEach(page => {
+    appState.filterExpanded[page] = false;
+    document.getElementById(page + '-filter-body').classList.remove('show');
+    document.getElementById(page + '-arrow').classList.remove('up');
+  });
+  document.getElementById('filter-backdrop').classList.remove('show');
+}
+
+function updateResultCount(page, count) {
+  const el = document.getElementById(page + '-result-count');
+  const bar = document.getElementById(page + '-result-bar');
+  const total = page === 'routes' ? routesData.length : needsData.length;
+  if (count === total) {
+    el.innerText = '';
+    bar.style.display = 'none';
+  } else {
+    el.innerText = `(${count}条)`;
+    bar.innerHTML = `找到 <span class="num">${count}</span> 条结果`;
+    bar.style.display = 'block';
+  }
+}
+
+function updateFilterSummary(page) {
+  const filters = page === 'routes' ? appState.routeFilters : appState.needFilters;
+  const active = Object.entries(filters).filter(([k,v]) => v !== 'all');
+  const summaryEl = document.getElementById(page + '-filter-summary');
+  const chipsEl = document.getElementById(page + '-chips');
+  if (active.length === 0) {
+    summaryEl.innerText = page === 'routes' ? '全部路线' : '全部需求';
+    chipsEl.style.display = 'none'; chipsEl.innerHTML = '';
+    return;
+  }
+  const labels = getFilterLabels(page);
+  const chips = active.map(([k,v]) => {
+    const label = labels[k] && labels[k][v] ? labels[k][v] : v;
+    return `<div class="chip">${label}<span class="x" onclick="event.stopPropagation();clearFilter('${page}','${k}')">✕</span></div>`;
+  }).join('');
+  chipsEl.innerHTML = chips + '<span class="chip-clear" onclick="event.stopPropagation();clearAllFiltersPage(\''+page+'\')">清除全部</span>';
+  chipsEl.style.display = 'flex';
+  summaryEl.innerText = `已选 ${active.length} 项`;
+}
+
+function getFilterLabels(page) {
+  if (page === 'routes') {
+    return {
+      type:{ citywalk:'Citywalk', cycling:'骑行', hiking:'徒步', running:'跑步', climbing:'登山', skate:'滑板' },
+      scene:{ art:'文艺', culture:'人文', nature:'自然', night:'夜景', history:'历史', food:'美食', photo:'拍照' },
+      crowd:{ solo:'一人游', couple:'双人/情侣', kid:'带娃', parent:'带父母', pet:'宠物友好' },
+      distance:{ d1:'1km内', d3:'3km内', d5:'5km内', d10:'10km内' },
+      duration:{ t1:'1小时内', t3:'1-3小时', t5:'3-5小时', t5plus:'半天以上' },
+      rating:{ r45:'4.5分以上', r40:'4.0分以上' }
+    };
+  }
+  return {
+    type:{ tennis:'网球', badminton:'羽毛球', cycling:'骑行', hiking:'徒步', citywalk:'Citywalk', running:'跑步', swimming:'游泳', climbing:'攀岩' },
+    subType:{ partner:'互为搭子', class:'报课/拼课', coach:'找陪练', instructor:'找教练', match:'约比赛' },
+    level:{ newbie:'纯新手', beginner:'入门', intermediate:'进阶', pro:'高手' },
+    cost:{ aa:'AA', self:'自付', free:'免费', sponsor:'我请客' },
+    gender:{ female:'仅女生', male:'仅男生' },
+    time:{ today:'今天', weekend:'本周末', weekday:'工作日', anytime:'随时' },
+    groupSize:{ one:'1v1', small:'小群', large:'大群' }
+  };
+}
+
+function clearFilter(page, key) {
+  if (page === 'routes') appState.routeFilters[key] = 'all';
+  else appState.needFilters[key] = 'all';
+  refreshFilterPills(page);
+  updateFilterSummary(page);
+  if (page === 'routes') renderRoutes();
+  else renderNeeds();
+}
+
+function clearAllFiltersPage(page) {
+  if (page === 'routes') appState.routeFilters = { type:'all', scene:'all', crowd:'all', distance:'all', duration:'all', rating:'all' };
+  else appState.needFilters = { type:'all', subType:'all', level:'all', cost:'all', gender:'all', time:'all', groupSize:'all' };
+  refreshFilterPills(page);
+  updateFilterSummary(page);
+  if (page === 'routes') renderRoutes();
+  else renderNeeds();
+}
+
+function refreshFilterPills(page) {
+  const filters = page === 'routes' ? appState.routeFilters : appState.needFilters;
+  document.querySelectorAll(`[data-filter="${page}"] .filter-pill`).forEach(btn => {
+    const key = btn.parentElement.dataset.key;
+    btn.classList.toggle('active', filters[key] === btn.dataset.val);
+  });
+}
+
+function initFilters() {
+  document.querySelectorAll('.filter-options').forEach(group => {
+    const page = group.dataset.filter;
+    const key = group.dataset.key;
+    group.querySelectorAll('.filter-pill').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        group.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const val = this.dataset.val;
+        if (page === 'routes') appState.routeFilters[key] = val;
+        else appState.needFilters[key] = val;
+        updateFilterSummary(page);
+        if (page === 'routes') renderRoutes();
+        else renderNeeds();
+        // Auto-close filter panel after selection so user sees results immediately
+        closeAllFilters();
+      });
+    });
+  });
+}
+
+// ===================== NAV =====================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function switchMainTab(tab) {
+  appState.currentTab = tab;
+  showPage(tab);
+  document.querySelectorAll('.bottom-tab .tab-item').forEach((item,i) => {
+    item.classList.toggle('active', (tab==='routes'&&i===0)||(tab==='needs'&&i===1)||(tab==='equip'&&i===2));
+  });
+  if (tab === 'routes') renderRoutes();
+  if (tab === 'needs') renderNeeds();
+  if (tab === 'equip') renderEquip();
+}
+
+function switchEquipCat(cat) {
+  appState.currentEquipCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.cat === cat));
+  renderEquip();
+}
+
+function switchRouteView(view) {
+  if (view === 'list') {
+    document.getElementById('route-list-view').style.display = 'block';
+    document.getElementById('route-map-view').style.display = 'none';
+    document.getElementById('route-view-list').style.cssText = 'cursor:pointer;color:var(--text);font-weight:600;font-size:14px;';
+    document.getElementById('route-view-map').style.cssText = 'cursor:pointer;color:var(--text-secondary);font-size:14px;';
+  } else {
+    document.getElementById('route-list-view').style.display = 'none';
+    document.getElementById('route-map-view').style.display = 'block';
+    document.getElementById('route-view-list').style.cssText = 'cursor:pointer;color:var(--text-secondary);font-size:14px;';
+    document.getElementById('route-view-map').style.cssText = 'cursor:pointer;color:var(--text);font-weight:600;font-size:14px;';
+  }
+}
+
+function goBackFromDetail() {
+  document.getElementById('bottom-tab').style.display = 'flex';
+  switchMainTab(appState.prevPage || 'routes');
+}
+
+// ===================== INTERACTIONS =====================
+function handleWantGo(routeId) {
+  appState.currentRouteId = routeId;
+  const st = appState.routeStates[routeId] || {want:false, been:false};
+  if (st.want) { st.want = false; appState.routeStates[routeId] = st; renderRoutes(); showToast('已取消想去'); return; }
+  const route = routesData.find(r => r.id === routeId);
+  document.getElementById('wantgo-title').innerText = '想去：' + route.title;
+  document.getElementById('wantgo-note').value = '';
+  document.getElementById('modal-wantgo').classList.add('active');
+}
+
+function handleBeen(routeId) {
+  appState.currentRouteId = routeId;
+  const st = appState.routeStates[routeId] || {want:false, been:false};
+  if (st.been) { st.been = false; appState.routeStates[routeId] = st; renderRoutes(); showToast('已取消打卡'); return; }
+  const route = routesData.find(r => r.id === routeId);
+  document.getElementById('wantgo-title').innerText = '已去：' + route.title;
+  document.getElementById('wantgo-note').value = '';
+  document.getElementById('modal-wantgo').classList.add('active');
+}
+
+function submitWantGo() {
+  const id = appState.currentRouteId;
+  if (!id) return;
+  const st = appState.routeStates[id] || {want:false, been:false};
+  const title = document.getElementById('wantgo-title').innerText;
+  if (title.startsWith('已去')) { st.been = true; showToast('已标记为已去'); }
+  else { st.want = true; showToast('已标记为想去'); }
+  appState.routeStates[id] = st;
+  closeModal('modal-wantgo');
+  renderRoutes();
+}
+
+function openWantPeopleModal(routeId) {
+  document.getElementById('wantpeople-list').innerHTML = wantPeopleData.map(p => `
+    <div class="people-item">
+      <div class="p-av" style="background:${p.avatarBg};">${p.name.charAt(0)}</div>
+      <div class="p-info"><div class="p-name">${p.name}</div><div class="p-desc">${p.desc}</div></div>
+      <button class="p-btn" onclick="showToast('已给 ${p.name} 发起组搭子邀请')">组搭子</button>
+    </div>
+  `).join('');
+  document.getElementById('modal-wantpeople').classList.add('active');
+}
+
+function openJoinModal(needId) {
+  const need = needsData.find(n => n.id === needId);
+  appState.currentNeedId = needId;
+  document.getElementById('join-content').innerHTML = `
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${need.title}</div>
+    <div style="font-size:13px;color:var(--text-secondary);">发起人：${need.name} · Lv.${need.level} · 信用${need.credit}</div>
+  `;
+  document.getElementById('modal-join').classList.add('active');
+}
+
+function submitJoin() { showToast('申请已提交！等待发起人确认'); closeModal('modal-join'); }
+
+function openRatingModal(name) {
+  document.getElementById('rating-target').innerText = name;
+  appState.currentRating = 0; updateStars();
+  document.getElementById('modal-rating').classList.add('active');
+}
+
+function submitRating() {
+  if (appState.currentRating === 0) { showToast('请先选择评分星级'); return; }
+  showToast('评分提交成功！感谢你的分享'); closeModal('modal-rating');
+}
+
+function setRating(v) { appState.currentRating = v; updateStars(); }
+function updateStars() {
+  document.querySelectorAll('#star-rating .star').forEach(s => s.classList.toggle('active', parseInt(s.dataset.val) <= appState.currentRating));
+}
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ===================== DETAIL PAGES =====================
+const routeComments = [
+  { name:'小林', text:'上周刚跑过，确实很舒服，早上人少空气好！', time:'2天前', likes:12 },
+  { name:'跑步君', text:'推荐从南门进，北园的风景更好。', time:'5天前', likes:8 },
+  { name:'Alice', text:'请问有配速要求吗？新手可以加入吗', time:'1周前', likes:3 },
+];
+const needComments = [
+  { name:'BikeBoy', text:'我可以！这周末有空。', time:'1小时前', likes:2 },
+  { name:'Coco', text:'加我一个，求拉群~', time:'3小时前', likes:1 },
+];
+
+function openRouteDetail(routeId) {
+  const r = routesData.find(x => x.id === routeId);
+  if (!r) return;
+  appState.currentRouteId = routeId;
+  document.getElementById('rd-title').innerText = r.title;
+  document.getElementById('rd-cover').style.background = r.imgBg;
+  document.getElementById('rd-emoji').innerText = r.imgEmoji;
+  document.getElementById('rd-dtitle').innerText = r.title;
+  const body = r.pois.map(p => `<p><b>${p.icon} ${p.text}</b></p>`).join('') + `<p style="margin-top:10px">这条路线全长${r.distance}，预计耗时${r.duration}。适合${r.crowd === 'solo' ? '独自' : r.crowd === 'couple' ? '情侣' : '家庭'}出行，当前评分 ${r.rating} 分，已有 ${r.ratingCount} 人评价。</p>`;
+  document.getElementById('rd-body').innerHTML = body;
+  document.getElementById('rd-tags').innerHTML = r.tags.map(t => `<span class="dtag">#${t.text}</span>`).join('');
+  document.getElementById('rd-lcount').innerText = r.wantCount;
+  const likeBtn = document.getElementById('rd-like');
+  const st = appState.routeStates[routeId] || {want:false};
+  likeBtn.classList.toggle('active', st.want);
+  document.getElementById('rd-ccount').innerText = '(' + routeComments.length + ')';
+  document.getElementById('rd-comments').innerHTML = routeComments.map(c => `
+    <div class="comment-item">
+      <div class="c-avatar">${c.name.charAt(0)}</div>
+      <div class="c-body">
+        <div class="c-name">${c.name}</div>
+        <div class="c-text">${c.text}</div>
+        <div class="c-actions"><span>${c.time}</span><span>♡ ${c.likes}</span><span>回复</span></div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('bottom-tab').style.display = 'none';
+  document.getElementById('route-detail-page').classList.add('active');
+  document.getElementById('rd-scroll').scrollTop = 0;
+}
+
+function openNeedDetail(needId) {
+  const n = needsData.find(x => x.id === needId);
+  if (!n) return;
+  appState.currentNeedId = needId;
+  document.getElementById('nd-title').innerText = '需求详情';
+  document.getElementById('nd-uavatar').innerText = n.avatarEmoji;
+  document.getElementById('nd-uavatar').style.background = n.avatarBg;
+  document.getElementById('nd-uname').innerText = n.name;
+  document.getElementById('nd-utime').innerText = `Lv.${n.level} · 信用${n.credit} · ${n.timeStr}`;
+  document.getElementById('nd-dtitle').innerText = n.title;
+  document.getElementById('nd-body').innerText = n.desc;
+  document.getElementById('nd-tags').innerHTML = n.tags.map(t => `<span class="dtag">#${t.text}</span>`).join('');
+  document.getElementById('nd-date').innerText = n.timeStr + ' · ' + n.area;
+  document.getElementById('nd-ccount').innerText = '(' + needComments.length + ')';
+  document.getElementById('nd-comments').innerHTML = needComments.map(c => `
+    <div class="comment-item">
+      <div class="c-avatar">${c.name.charAt(0)}</div>
+      <div class="c-body">
+        <div class="c-name">${c.name}</div>
+        <div class="c-text">${c.text}</div>
+        <div class="c-actions"><span>${c.time}</span><span>♡ ${c.likes}</span><span>回复</span></div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('bottom-tab').style.display = 'none';
+  document.getElementById('need-detail-page').classList.add('active');
+  document.getElementById('nd-scroll').scrollTop = 0;
+}
+
+function closeDetailPage(id) {
+  document.getElementById(id).classList.remove('active');
+  document.getElementById('bottom-tab').style.display = 'flex';
+}
+
+function toggleDetailLike(type) {
+  if (type === 'route') {
+    const id = appState.currentRouteId; if (!id) return;
+    const st = appState.routeStates[id] || {want:false, been:false};
+    st.want = !st.want; appState.routeStates[id] = st;
+    document.getElementById('rd-like').classList.toggle('active', st.want);
+    const r = routesData.find(x => x.id === id);
+    document.getElementById('rd-lcount').innerText = r.wantCount + (st.want ? 1 : 0);
+    showToast(st.want ? '已标记为想去' : '已取消想去');
+  } else {
+    const btn = document.getElementById('nd-like');
+    const active = btn.classList.toggle('active');
+    const count = parseInt(document.getElementById('nd-lcount').innerText);
+    document.getElementById('nd-lcount').innerText = active ? count + 1 : Math.max(0, count - 1);
+    showToast(active ? '已点赞' : '已取消点赞');
+  }
+}
+
+function joinFromDetail() {
+  const needId = appState.currentNeedId;
+  if (!needId) return;
+  openJoinModal(needId);
+}
+
+// ===================== INIT =====================
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
+document.querySelectorAll('#star-rating .star').forEach(s => s.addEventListener('click', () => setRating(parseInt(s.dataset.val))));
+
+initFilters();
+renderRoutes();
+renderNeeds();
+renderEquip();
+updateFilterSummary('routes');
+updateFilterSummary('needs');
+switchMainTab('routes');
+</script>
+
+</body>
+</html>
