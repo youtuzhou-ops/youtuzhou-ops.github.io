@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>引力盐 - 找搭子</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background:#1a1a1a; color:#2D2D2D; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+
+  /* Phone frame for desktop */
+  #phone-frame { width:100%; height:100%; max-width:430px; max-height:100vh; position:relative; }
+  @media (min-width: 480px) {
+    #phone-frame { height:92vh; border-radius:40px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.4); border:10px solid #2a2a2a; }
+  }
+
+  #app { width:100%; height:100%; position:relative; background:#F7F3EF; overflow:hidden; display:flex; flex-direction:column; }
+  .page { flex:1; overflow-y:auto; display:none; padding-bottom:140px; }
+  .page.active { display:block; }
+  .page::-webkit-scrollbar { display:none; }
+
+  :root { --primary:#E85D3F; --primary-light:#FFF0ED; --secondary:#FFB347; --dark:#2D2D2D; --gray:#8E8E93; --light-gray:#E5E5EA; --bg:#F7F3EF; --card:#FFFFFF; }
+
+  /* Header */
+  .header { padding:16px 20px 8px; display:flex; justify-content:space-between; align-items:center; background:var(--bg); position:sticky; top:0; z-index:10; }
+  .header-title { font-size:20px; font-weight:700; color:var(--dark); }
+  .header-action { font-size:14px; color:var(--primary); font-weight:600; padding:6px 0; cursor:pointer; }
+  .header-action:active { opacity:.7; }
+
+  /* Filter trigger bar */
+  .filter-trigger-bar { padding:8px 16px 4px; display:flex; gap:8px; overflow-x:auto; }
+  .filter-trigger-bar::-webkit-scrollbar { display:none; }
+  .filter-pill { white-space:nowrap; padding:6px 14px; border-radius:20px; font-size:13px; background:#EBE7E3; color:#5C5C5C; border:1.5px solid transparent; cursor:pointer; transition:all .2s; font-weight:500; display:flex; align-items:center; gap:4px; }
+  .filter-pill.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .filter-pill .dot { width:6px; height:6px; border-radius:50%; background:var(--primary); display:none; }
+  .filter-pill.has-filter .dot { display:inline-block; }
+
+  /* FAB */
+  .fab { position:fixed; bottom:88px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(232,93,63,0.4); cursor:pointer; z-index:90; transition:transform .2s,opacity .2s; }
+  .fab:active { transform:scale(0.92); opacity:.9; }
+  @media (min-width: 480px) {
+    .fab { right: calc(50% - 195px); }
+  }
+
+  /* Cards */
+  .card { background:var(--card); border-radius:16px; margin:12px 16px; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
+  .card-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .user-info { flex:1; }
+  .user-name { font-size:15px; font-weight:600; color:var(--dark); }
+  .user-meta { font-size:12px; color:var(--gray); margin-top:2px; display:flex; align-items:center; gap:6px; }
+  .level-badge { background:linear-gradient(135deg,#FFB347,#E85D3F); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+  .status-tag { font-size:11px; padding:3px 10px; border-radius:12px; font-weight:600; }
+  .status-tag.active { background:#E8F5E9; color:#2E7D32; }
+  .card-title { font-size:16px; font-weight:700; color:var(--dark); margin-bottom:8px; line-height:1.4; }
+  .card-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .tag { padding:4px 10px; border-radius:10px; font-size:12px; font-weight:500; }
+  .tag.food { background:#FFF3E0; color:#E65100; }
+  .tag.budget { background:#E8F5E9; color:#2E7D32; }
+  .tag.location { background:#E3F2FD; color:#1565C0; }
+  .tag.gender { background:#F3E5F5; color:#6A1B9A; }
+  .tag.freq { background:#E0F2F1; color:#00695C; }
+  .card-desc { font-size:13px; color:#666; line-height:1.6; margin-bottom:12px; }
+  .card-actions { display:flex; gap:10px; }
+
+  /* Buttons */
+  .btn-primary { flex:1; background:var(--primary); color:#fff; border:none; padding:12px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; transition:opacity .2s,transform .1s; }
+  .btn-primary:active { opacity:.85; transform:scale(0.98); }
+  .btn-outline { flex:1; background:transparent; color:var(--primary); border:1.5px solid var(--primary); padding:12px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; transition:background .2s,transform .1s; }
+  .btn-outline:active { background:var(--primary-light); transform:scale(0.98); }
+  .btn-secondary { background:#EBE7E3; color:#5C5C5C; border:none; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; transition:opacity .2s,transform .1s; }
+  .btn-secondary:active { opacity:.8; transform:scale(0.98); }
+
+  /* Tab Bar */
+  .tab-bar { position:absolute; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #F0EBE7; display:flex; justify-content:space-around; padding:8px 0 calc(8px + env(safe-area-inset-bottom)); z-index:100; }
+  .tab-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; color:var(--gray); font-size:11px; font-weight:500; flex:1; }
+  .tab-item.active { color:var(--primary); }
+  .tab-icon { font-size:22px; }
+
+  /* Modal overlay */
+  .modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:none; justify-content:flex-end; flex-direction:column; z-index:200; }
+  .modal-overlay.show { display:flex; }
+  .modal-sheet { background:#fff; border-radius:20px 20px 0 0; max-height:85vh; overflow-y:auto; animation:slideUp .3s ease; }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .modal-header { padding:16px 20px 0; display:flex; justify-content:center; position:relative; }
+  .modal-drag { width:40px; height:4px; background:#D1D1D6; border-radius:2px; }
+  .modal-close { position:absolute; right:20px; top:16px; font-size:20px; color:var(--gray); cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; }
+  .modal-body { padding:16px 20px 24px; }
+  .modal-footer { padding:12px 20px 24px; display:flex; gap:12px; border-top:1px solid #F0EBE7; }
+
+  /* Filter modal content */
+  .filter-section-modal { margin-bottom:16px; }
+  .filter-section-modal .filter-label { font-size:13px; color:var(--gray); margin-bottom:10px; font-weight:600; }
+  .filter-section-modal .filter-row { display:flex; flex-wrap:wrap; gap:10px; }
+  .filter-section-modal .filter-chip { padding:8px 16px; border-radius:20px; font-size:13px; background:#F7F3EF; color:#5C5C5C; border:1.5px solid transparent; cursor:pointer; transition:all .2s; font-weight:500; }
+  .filter-section-modal .filter-chip.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+  /* Form */
+  .form-page { padding:16px; }
+  .form-group { margin-bottom:20px; }
+  .form-label { font-size:14px; font-weight:600; color:var(--dark); margin-bottom:8px; display:block; }
+  .form-input, .form-textarea { width:100%; padding:12px 16px; border:1.5px solid var(--light-gray); border-radius:12px; font-size:14px; background:#fff; outline:none; transition:border .2s; font-family:inherit; }
+  .form-input:focus, .form-textarea:focus { border-color:var(--primary); }
+  .form-textarea { min-height:100px; resize:none; }
+  .form-options { display:flex; flex-wrap:wrap; gap:8px; }
+  .form-option { padding:8px 16px; border-radius:20px; border:1.5px solid var(--light-gray); background:#fff; font-size:13px; color:#5C5C5C; cursor:pointer; font-weight:500; transition:all .2s; }
+  .form-option.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .form-option .emoji { margin-right:4px; }
+
+  /* Toast */
+  .toast { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.9); background:rgba(45,45,45,0.92); color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; z-index:300; opacity:0; pointer-events:none; transition:all .3s; font-weight:500; }
+  .toast.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+
+  /* Shop Cards */
+  .shop-card { display:flex; gap:12px; }
+  .shop-img { width:90px; height:90px; border-radius:12px; object-fit:cover; background:#EBE7E3; flex-shrink:0; }
+  .shop-info { flex:1; display:flex; flex-direction:column; justify-content:center; min-width:0; }
+  .shop-name-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .shop-name { font-size:15px; font-weight:700; color:var(--dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .shop-rating { font-size:13px; color:#FF9500; font-weight:700; flex-shrink:0; }
+  .shop-meta { font-size:12px; color:var(--gray); margin-bottom:6px; }
+  .shop-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+  .shop-tag { padding:3px 8px; border-radius:8px; font-size:11px; background:#FFF3E0; color:#E65100; font-weight:500; }
+  .shop-tag.scene { background:#E3F2FD; color:#1565C0; }
+  .shop-dishes { font-size:12px; color:#666; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Optimized shop action buttons */
+  .shop-actions { display:flex; gap:6px; align-items:center; }
+  .shop-actions .toggle-btn { flex:1; padding:9px 2px; border-radius:10px; border:1.5px solid var(--light-gray); background:#fff; font-size:12px; font-weight:500; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; gap:3px; transition:all .2s; }
+  .shop-actions .toggle-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .shop-actions .btn-want-count { flex:1.4; padding:9px 4px; border-radius:10px; background:#EBE7E3; color:#5C5C5C; border:none; font-size:12px; font-weight:500; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; gap:3px; transition:all .2s; }
+  .shop-actions .btn-want-count:active { opacity:.8; transform:scale(0.98); }
+
+  /* User List */
+  .user-list-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F0EBE7; }
+  .user-list-item:last-child { border-bottom:none; }
+  .user-list-avatar { width:44px; height:44px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .user-list-info { flex:1; min-width:0; }
+  .user-list-name { font-size:15px; font-weight:600; }
+  .user-list-bio { font-size:12px; color:var(--gray); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .user-list-btn { padding:8px 16px; border-radius:10px; background:var(--primary); color:#fff; font-size:13px; font-weight:600; border:none; cursor:pointer; }
+
+  /* Rating */
+  .rating-stars { display:flex; gap:8px; margin:12px 0; }
+  .star { font-size:32px; color:#E5E5EA; cursor:pointer; transition:color .2s; }
+  .star.active { color:#FF9500; }
+  .label-options { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .label-option { padding:8px 16px; border-radius:20px; border:1.5px solid var(--light-gray); background:#fff; font-size:13px; cursor:pointer; }
+  .label-option.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+  /* Profile */
+  .profile-header { padding:24px 20px; text-align:center; background:linear-gradient(135deg,#FFF0ED,#FFF8F5); border-radius:0 0 24px 24px; margin-bottom:16px; }
+  .profile-avatar { width:80px; height:80px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:40px; margin:0 auto 12px; }
+  .profile-name { font-size:20px; font-weight:700; margin-bottom:4px; }
+  .profile-level { display:inline-block; background:linear-gradient(135deg,#FFB347,#E85D3F); color:#fff; font-size:12px; padding:4px 12px; border-radius:12px; font-weight:600; }
+  .profile-stats { display:flex; justify-content:center; gap:32px; margin-top:16px; }
+  .profile-stat { text-align:center; }
+  .profile-stat-num { font-size:20px; font-weight:700; color:var(--primary); }
+  .profile-stat-label { font-size:12px; color:var(--gray); margin-top:2px; }
+  .section-title { font-size:16px; font-weight:700; padding:16px 20px 8px; }
+
+  /* Empty State */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--gray); }
+  .empty-icon { font-size:48px; margin-bottom:12px; }
+  .empty-text { font-size:14px; }
+
+  .back-btn { font-size:20px; color:var(--dark); cursor:pointer; margin-right:8px; }
+
+  .detail-img { width:100%; height:200px; object-fit:cover; background:#EBE7E3; }
+  .detail-body { padding:16px; }
+
+  .fade-in { animation:fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="phone-frame">
+<div id="app">
+
+<!-- ========== PAGE: 需求广场 ========== -->
+<div class="page active" id="page-needs">
+  <div class="header">
+    <span class="header-title">需求广场</span>
+    <span class="header-action" onclick="openFilterModal('needs')">筛选</span>
+  </div>
+  <div id="needs-list"></div>
+</div>
+
+<!-- ========== PAGE: 发需求 ========== -->
+<div class="page" id="page-post-need">
+  <div class="header">
+    <span style="display:flex;align-items:center;"><span class="back-btn" onclick="goPage('needs')">‹</span><span class="header-title">发需求</span></span>
+  </div>
+  <div class="form-page">
+    <div class="form-group">
+      <label class="form-label">标题</label>
+      <input class="form-input" id="post-title" placeholder="简短描述你的需求，例如：求饭搭子，爱吃辣">
+    </div>
+    <div class="form-group">
+      <label class="form-label">饮食偏好（可多选）</label>
+      <div class="form-options" id="post-pref">
+        <span class="form-option" data-val="爱吃辣"><span class="emoji">🌶️</span>爱吃辣</span>
+        <span class="form-option" data-val="不吃辣"><span class="emoji">🚫</span>不吃辣</span>
+        <span class="form-option" data-val="不吃香菜"><span class="emoji">🚫</span>不吃香菜</span>
+        <span class="form-option" data-val="大食量"><span class="emoji">🍽️</span>大食量</span>
+        <span class="form-option" data-val="轻食"><span class="emoji">🥗</span>轻食</span>
+        <span class="form-option" data-val="爱吃甜"><span class="emoji">🍰</span>爱吃甜</span>
+        <span class="form-option" data-val="爱吃肉"><span class="emoji">🥩</span>爱吃肉</span>
+        <span class="form-option" data-val="素食"><span class="emoji">🌿</span>素食</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">预算</label>
+      <div class="form-options" id="post-budget">
+        <span class="form-option selected" data-val="不设预算">不设预算</span>
+        <span class="form-option" data-val="0-100">0-100</span>
+        <span class="form-option" data-val="100-200">100-200</span>
+        <span class="form-option" data-val="200-300">200-300</span>
+        <span class="form-option" data-val="300+">300+</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">地点</label>
+      <input class="form-input" id="post-location" placeholder="例如：朝阳区">
+    </div>
+    <div class="form-group">
+      <label class="form-label">性别要求</label>
+      <div class="form-options" id="post-gender">
+        <span class="form-option selected" data-val="不限">不限</span>
+        <span class="form-option" data-val="限女性">限女性</span>
+        <span class="form-option" data-val="限男性">限男性</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">活动频率</label>
+      <div class="form-options" id="post-freq">
+        <span class="form-option selected" data-val="固定搭子">固定搭子</span>
+        <span class="form-option" data-val="单次">单次</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">详细说明</label>
+      <textarea class="form-textarea" id="post-desc" placeholder="描述你的具体需求..."></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="submitNeed()">发布</button>
+  </div>
+</div>
+
+<!-- ========== PAGE: 一人食店铺 ========== -->
+<div class="page" id="page-shops">
+  <div class="header">
+    <span class="header-title">一人食店铺</span>
+    <span class="header-action" onclick="openFilterModal('shops')">筛选</span>
+  </div>
+  <div id="shops-list"></div>
+</div>
+
+<!-- ========== PAGE: 店铺评价 ========== -->
+<div class="page" id="page-review">
+  <div class="header">
+    <span style="display:flex;align-items:center;"><span class="back-btn" onclick="goPage('shops')">‹</span><span class="header-title">写评价</span></span>
+  </div>
+  <div class="form-page">
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;" id="review-shop-name">铃木食堂</div>
+    <div class="form-label">评分</div>
+    <div class="rating-stars" id="rating-stars">
+      <span class="star" data-val="1">★</span>
+      <span class="star" data-val="2">★</span>
+      <span class="star" data-val="3">★</span>
+      <span class="star" data-val="4">★</span>
+      <span class="star" data-val="5">★</span>
+    </div>
+    <div class="form-label">贴标签</div>
+    <div class="label-options" id="review-labels">
+      <span class="label-option">氛围好店</span>
+      <span class="label-option">温暖小店</span>
+      <span class="label-option">拍照出片</span>
+      <span class="label-option">一人食友好</span>
+      <span class="label-option">性价比高</span>
+      <span class="label-option">服务周到</span>
+      <span class="label-option">口味正宗</span>
+      <span class="label-option">环境安静</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">评价</label>
+      <textarea class="form-textarea" id="review-text" placeholder="写下你的体验..."></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="submitReview()">提交评价</button>
+  </div>
+</div>
+
+<!-- ========== PAGE: 我的 ========== -->
+<div class="page" id="page-profile">
+  <div class="profile-header">
+    <div class="profile-avatar">🍜</div>
+    <div class="profile-name">美食探索家</div>
+    <span class="profile-level">🍜 Lv.3</span>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="profile-stat-num">12</div><div class="profile-stat-label">发布需求</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">28</div><div class="profile-stat-label">探店</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">8</div><div class="profile-stat-label">搭子</div></div>
+    </div>
+  </div>
+  <div class="section-title">我的足迹</div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;" onclick="showToast('功能开发中')">
+      <span style="font-size:15px;font-weight:600;">⭐ 收藏的店铺</span>
+      <span style="color:var(--gray);">›</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #F0EBE7;" onclick="showToast('功能开发中')">
+      <span style="font-size:15px;font-weight:600;">📝 我的评价</span>
+      <span style="color:var(--gray);">›</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #F0EBE7;" onclick="showToast('功能开发中')">
+      <span style="font-size:15px;font-weight:600;">📌 想去清单</span>
+      <span style="color:var(--gray);">›</span>
+    </div>
+  </div>
+  <div class="section-title">美食等级</div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#FFB347,#E85D3F);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;">🍜</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;">Lv.3 美食家</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px;">再探店 12 家升级至 Lv.4</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;height:8px;background:#EBE7E3;border-radius:4px;overflow:hidden;">
+      <div style="width:60%;height:100%;background:linear-gradient(90deg,#FFB347,#E85D3F);border-radius:4px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: 需求详情 & 申请加入 ========== -->
+<div class="modal-overlay" id="modal-need" onclick="closeModal(event,'modal-need')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-drag"></div><div class="modal-close" onclick="hideModal('modal-need')">✕</div></div>
+    <div class="modal-body" id="modal-need-body"></div>
+  </div>
+</div>
+
+<!-- ========== MODAL: 想去的人 ========== -->
+<div class="modal-overlay" id="modal-want" onclick="closeModal(event,'modal-want')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-drag"></div><div class="modal-close" onclick="hideModal('modal-want')">✕</div></div>
+    <div class="modal-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:16px;text-align:center;">想去的人</div>
+      <div id="want-users-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: 组搭子确认 ========== -->
+<div class="modal-overlay" id="modal-teamup" onclick="closeModal(event,'modal-teamup')">
+  <div class="modal-sheet" style="max-height:50vh;" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-drag"></div></div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">发起邀约</div>
+      <div style="font-size:14px;color:#666;margin-bottom:20px;">向对方发送组搭子邀请？</div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn-outline" onclick="hideModal('modal-teamup')">取消</button>
+        <button class="btn-primary" onclick="confirmTeamup()">确认发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: 筛选浮层 - 需求广场 ========== -->
+<div class="modal-overlay" id="modal-filter-needs" onclick="closeModal(event,'modal-filter-needs')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-drag"></div><div class="modal-close" onclick="hideModal('modal-filter-needs')">✕</div></div>
+    <div class="modal-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:20px;">筛选需求</div>
+      <div class="filter-section-modal">
+        <div class="filter-label">类型</div>
+        <div class="filter-row" id="modal-filter-type">
+          <span class="filter-chip active" data-val="all">全部</span>
+          <span class="filter-chip" data-val="饭搭子">饭搭子</span>
+          <span class="filter-chip" data-val="探店">探店</span>
+          <span class="filter-chip" data-val="外卖拼单">外卖拼单</span>
+          <span class="filter-chip" data-val="做饭搭子">做饭搭子</span>
+        </div>
+      </div>
+      <div class="filter-section-modal">
+        <div class="filter-label">饮食偏好</div>
+        <div class="filter-row" id="modal-filter-pref">
+          <span class="filter-chip active" data-val="all">全部</span>
+          <span class="filter-chip" data-val="爱吃辣">🌶️爱吃辣</span>
+          <span class="filter-chip" data-val="不吃辣">🚫不吃辣</span>
+          <span class="filter-chip" data-val="不吃香菜">🚫不吃香菜</span>
+          <span class="filter-chip" data-val="大食量">🍽️大食量</span>
+          <span class="filter-chip" data-val="轻食">🥗轻食</span>
+          <span class="filter-chip" data-val="爱吃甜">🍰爱吃甜</span>
+          <span class="filter-chip" data-val="爱吃肉">🥩爱吃肉</span>
+          <span class="filter-chip" data-val="素食">🌿素食</span>
+        </div>
+      </div>
+      <div class="filter-section-modal">
+        <div class="filter-label">预算</div>
+        <div class="filter-row" id="modal-filter-budget">
+          <span class="filter-chip active" data-val="all">全部</span>
+          <span class="filter-chip" data-val="不设预算">不设预算</span>
+          <span class="filter-chip" data-val="0-100">0-100</span>
+          <span class="filter-chip" data-val="100-200">100-200</span>
+          <span class="filter-chip" data-val="200-300">200-300</span>
+          <span class="filter-chip" data-val="300+">300+</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="resetNeedFilters()">重置</button>
+      <button class="btn-primary" onclick="applyNeedFilters()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: 筛选浮层 - 店铺 ========== -->
+<div class="modal-overlay" id="modal-filter-shops" onclick="closeModal(event,'modal-filter-shops')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-drag"></div><div class="modal-close" onclick="hideModal('modal-filter-shops')">✕</div></div>
+    <div class="modal-body">
+      <div style="font-size:18px;font-weight:700;margin-bottom:20px;">筛选店铺</div>
+      <div class="filter-section-modal">
+        <div class="filter-label">类型</div>
+        <div class="filter-row" id="modal-shop-filter-type">
+          <span class="filter-chip active" data-val="all">全部</span>
+          <span class="filter-chip" data-val="日料">日料</span>
+          <span class="filter-chip" data-val="简餐">简餐</span>
+          <span class="filter-chip" data-val="面食">面食</span>
+          <span class="filter-chip" data-val="甜品">甜品</span>
+          <span class="filter-chip" data-val="咖啡">咖啡</span>
+          <span class="filter-chip" data-val="火锅">火锅</span>
+          <span class="filter-chip" data-val="烧烤">烧烤</span>
+        </div>
+      </div>
+      <div class="filter-section-modal">
+        <div class="filter-label">适合场景</div>
+        <div class="filter-row" id="modal-shop-filter-scene">
+          <span class="filter-chip active" data-val="all">全部</span>
+          <span class="filter-chip" data-val="氛围感">氛围感</span>
+          <span class="filter-chip" data-val="拍照">拍照</span>
+          <span class="filter-chip" data-val="温暖小店">温暖小店</span>
+          <span class="filter-chip" data-val="一人食友好">一人食友好</span>
+          <span class="filter-chip" data-val="安静">安静</span>
+          <span class="filter-chip" data-val="性价比">性价比</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="resetShopFilters()">重置</button>
+      <button class="btn-primary" onclick="applyShopFilters()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB BAR ========== -->
+<div class="tab-bar">
+  <div class="tab-item active" data-page="needs" onclick="switchTab('needs')">
+    <span class="tab-icon">📋</span>
+    <span>需求</span>
+  </div>
+  <div class="tab-item" data-page="shops" onclick="switchTab('shops')">
+    <span class="tab-icon">🏪</span>
+    <span>店铺</span>
+  </div>
+  <div class="tab-item" data-page="profile" onclick="switchTab('profile')">
+    <span class="tab-icon">👤</span>
+    <span>我的</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- FAB: 发需求 -->
+<button class="fab" id="fab-post" onclick="goPage('post-need')">+</button>
+
+</div><!-- /app -->
+</div><!-- /phone-frame -->
+
+<script>
+// ===================== DATA =====================
+const needsData = [
+  { id:1, avatar:'🍜', name:'大胃王小美', level:'Lv.3', time:'1小时前', location:'朝阳区', status:'进行中', title:'求饭搭子，爱吃辣，能吃辣的来', prefs:['爱吃辣','大食量'], budget:'100-200', gender:'不限', freq:'单次', desc:'想找能吃辣的朋友一起探店，湘菜川菜都行，人均100-200，周末晚上有空。' },
+  { id:2, avatar:'📷', name:'拍照达人', level:'Lv.2', time:'3小时前', location:'海淀区', status:'进行中', title:'求探店搭子，主要为了拍照出片', prefs:['不吃辣','不吃香菜'], budget:'不设预算', gender:'限女性', freq:'单次', desc:'想找也喜欢拍照的姐妹一起探店，氛围感餐厅优先，可以互相拍照，不吃香菜。' },
+  { id:3, avatar:'🥗', name:'轻食小王', level:'Lv.4', time:'5小时前', location:'朝阳区', status:'进行中', title:'求工作日午餐搭子，轻食为主', prefs:['轻食'], budget:'0-100', gender:'不限', freq:'固定搭子', desc:'工作日中午想吃轻食，找固定搭子，国贸附近，预算50以内。' },
+  { id:4, avatar:'🍖', name:'肉食爱好者', level:'Lv.2', time:'昨天', location:'海淀区', status:'进行中', title:'求烤肉搭子，大食量优先', prefs:['爱吃肉','大食量'], budget:'100-200', gender:'不限', freq:'单次', desc:'周五晚上想去吃烤肉，找能吃的搭子，AA制。' },
+  { id:5, avatar:'🍰', name:'甜品控', level:'Lv.5', time:'昨天', location:'朝阳区', status:'进行中', title:'求甜品探店搭子', prefs:['爱吃甜'], budget:'100-200', gender:'限女性', freq:'单次', desc:'周末想去打卡新开的甜品店，找同样喜欢甜品的姐妹一起。' }
+];
+
+const shopsData = [
+  { id:1, name:'铃木食堂', type:'日料', rating:4.8, distance:'800m', price:80, scenes:['氛围感','温暖小店','一人食友好'], tags:['日料','温暖小店'], dishes:'推荐：牛肉饭定食、味噌汤、杏仁豆腐', want:45, wantMarked:false, visited:true },
+  { id:2, name:'Metal Hands 铁手咖啡', type:'咖啡', rating:4.7, distance:'1.2km', price:60, scenes:['拍照','氛围感','安静'], tags:['咖啡','氛围感'], dishes:'推荐：Dirty、藤黄无花奶酪、澳白', want:67, wantMarked:false, visited:false },
+  { id:3, name:'野崎拉面', type:'面食', rating:4.5, distance:'2.5km', price:45, scenes:['温暖小店','一人食友好','性价比'], tags:['面食','温暖小店'], dishes:'推荐：豚骨拉面、煎饺、溏心蛋', want:23, wantMarked:false, visited:false },
+  { id:4, name:'一兰拉面', type:'面食', rating:4.6, distance:'3.1km', price:68, scenes:['一人食友好','安静','氛围感'], tags:['面食','一人食友好'], dishes:'推荐：天然豚骨拉面、抹茶杏仁豆腐', want:89, wantMarked:false, visited:false },
+  { id:5, name:'%Arabica', type:'咖啡', rating:4.4, distance:'1.5km', price:45, scenes:['拍照','氛围感'], tags:['咖啡','拍照'], dishes:'推荐：西班牙拿铁、抹茶拿铁', want:56, wantMarked:false, visited:false },
+];
+
+const wantUsers = [
+  { avatar:'🍜', name:'大胃王小美', level:'Lv.3', bio:'这周末有空，想找个人一起' },
+  { avatar:'📷', name:'拍照达人', level:'Lv.2', bio:'下周三晚上可以' },
+  { avatar:'🥗', name:'减脂小张', level:'Lv.4', bio:'随时，求带' },
+  { avatar:'🍰', name:'烘焙小白', level:'Lv.1', bio:'想找个安静的店坐坐' },
+];
+
+let currentNeed = null;
+let currentShop = null;
+let currentRating = 0;
+let activeTypeFilter = 'all';
+let activePrefFilter = 'all';
+let activeBudgetFilter = 'all';
+let activeShopTypeFilter = 'all';
+let activeShopSceneFilter = 'all';
+
+// ===================== RENDER =====================
+function renderNeeds() {
+  const container = document.getElementById('needs-list');
+  const filtered = needsData.filter(n => {
+    if(activeTypeFilter!=='all' && !n.title.includes(activeTypeFilter)) return false;
+    if(activePrefFilter!=='all' && !n.prefs.includes(activePrefFilter)) return false;
+    if(activeBudgetFilter!=='all' && n.budget!==activeBudgetFilter) return false;
+    return true;
+  });
+  if(filtered.length===0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">暂无匹配需求，换个筛选条件试试</div></div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(n => `
+    <div class="card fade-in" onclick="openNeedDetail(${n.id})">
+      <div class="card-header">
+        <div class="avatar">${n.avatar}</div>
+        <div class="user-info">
+          <div class="user-name">${n.name} <span class="level-badge">🍜 ${n.level}</span></div>
+          <div class="user-meta">发布于 ${n.time} · ${n.location}</div>
+        </div>
+        <span class="status-tag active">${n.status}</span>
+      </div>
+      <div class="card-title">${n.title}</div>
+      <div class="card-tags">
+        ${n.prefs.map(p=>`<span class="tag food">${p}</span>`).join('')}
+        <span class="tag budget">${n.budget}</span>
+        <span class="tag location">${n.location}</span>
+        <span class="tag gender">${n.gender}</span>
+        <span class="tag freq">${n.freq}</span>
+      </div>
+      <div class="card-desc">${n.desc}</div>
+      <div class="card-actions">
+        <button class="btn-primary" onclick="event.stopPropagation();openApplyModal(${n.id})">我要加入</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderShops() {
+  const container = document.getElementById('shops-list');
+  const filtered = shopsData.filter(s => {
+    if(activeShopTypeFilter!=='all' && s.type!==activeShopTypeFilter) return false;
+    if(activeShopSceneFilter!=='all' && !s.scenes.includes(activeShopSceneFilter)) return false;
+    return true;
+  });
+  if(filtered.length===0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">暂无匹配店铺，换个筛选条件试试</div></div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(s => `
+    <div class="card fade-in">
+      <div class="shop-card">
+        <div class="shop-img" style="display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,#FFF0ED,#FFF8F5);">${getShopEmoji(s.type)}</div>
+        <div class="shop-info">
+          <div class="shop-name-row">
+            <span class="shop-name">${s.name}</span>
+            <span class="shop-rating">★ ${s.rating}</span>
+          </div>
+          <div class="shop-meta">${s.type} · 距你${s.distance} · 人均¥${s.price}</div>
+          <div class="shop-tags">
+            ${s.scenes.map(t=>`<span class="shop-tag scene">${t}</span>`).join('')}
+          </div>
+          <div class="shop-dishes">${s.dishes}</div>
+          <div class="shop-actions">
+            <button class="toggle-btn ${s.wantMarked?'active':''}" onclick="toggleWant(${s.id})">❤️ 想去</button>
+            <button class="toggle-btn ${s.visited?'active':''}" onclick="toggleVisited(${s.id})">✓ 已去</button>
+            <button class="btn-want-count" onclick="openWantUsers(${s.id})">${s.want}人想去 ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getShopEmoji(type) {
+  const map = {'日料':'🍣','简餐':'🍱','面食':'🍜','甜品':'🍰','咖啡':'☕','火锅':'🍲','烧烤':'🍖'};
+  return map[type] || '🍽️';
+}
+
+// ===================== INTERACTIONS =====================
+function switchTab(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab-item[data-page="${page}"]`).classList.add('active');
+  const fab = document.getElementById('fab-post');
+  if(fab) fab.style.display = (page==='needs') ? 'flex' : 'none';
+}
+
+function goPage(page) {
+  switchTab(page);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function openNeedDetail(id) {
+  currentNeed = needsData.find(n=>n.id===id);
+  const body = document.getElementById('modal-need-body');
+  body.innerHTML = `
+    <div class="card-header" style="margin-bottom:16px;">
+      <div class="avatar">${currentNeed.avatar}</div>
+      <div class="user-info">
+        <div class="user-name">${currentNeed.name} <span class="level-badge">🍜 ${currentNeed.level}</span></div>
+        <div class="user-meta">发布于 ${currentNeed.time} · ${currentNeed.location}</div>
+      </div>
+    </div>
+    <div class="card-title" style="font-size:18px;">${currentNeed.title}</div>
+    <div class="card-tags" style="margin-bottom:12px;">
+      ${currentNeed.prefs.map(p=>`<span class="tag food">${p}</span>`).join('')}
+      <span class="tag budget">${currentNeed.budget}</span>
+      <span class="tag location">${currentNeed.location}</span>
+      <span class="tag gender">${currentNeed.gender}</span>
+      <span class="tag freq">${currentNeed.freq}</span>
+    </div>
+    <div class="card-desc" style="font-size:14px;">${currentNeed.desc}</div>
+    <div style="margin-top:16px;padding:16px;background:#F7F3EF;border-radius:12px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px;">申请加入</div>
+      <textarea class="form-textarea" id="apply-msg" placeholder="简单介绍一下你的饮食偏好和时间..." style="min-height:80px;margin-bottom:12px;"></textarea>
+      <button class="btn-primary" style="width:100%;" onclick="submitApply()">提交申请</button>
+    </div>
+  `;
+  document.getElementById('modal-need').classList.add('show');
+}
+
+function openApplyModal(id) {
+  openNeedDetail(id);
+}
+
+function submitApply() {
+  const msg = document.getElementById('apply-msg').value;
+  if(!msg.trim()) { showToast('请填写自我介绍'); return; }
+  hideModal('modal-need');
+  showToast('申请已发送！');
+}
+
+function hideModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function closeModal(e,id) {
+  if(e.target.id===id) hideModal(id);
+}
+
+function toggleWant(id) {
+  event.stopPropagation();
+  const shop = shopsData.find(s=>s.id===id);
+  shop.wantMarked = !shop.wantMarked;
+  if(shop.wantMarked) {
+    shop.want++;
+    showToast(`已标记「想去」${shop.name}`);
+  } else {
+    shop.want--;
+    showToast(`已取消「想去」${shop.name}`);
+  }
+  renderShops();
+}
+
+function toggleVisited(id) {
+  event.stopPropagation();
+  const shop = shopsData.find(s=>s.id===id);
+  if(!shop.visited) {
+    shop.visited = true;
+    renderShops();
+    goReview(id);
+  } else {
+    shop.visited = false;
+    renderShops();
+    showToast(`已取消「已去」${shop.name}`);
+  }
+}
+
+function goReview(id) {
+  event.stopPropagation();
+  currentShop = shopsData.find(s=>s.id===id);
+  document.getElementById('review-shop-name').textContent = currentShop.name;
+  currentRating = 0;
+  updateStars();
+  document.querySelectorAll('#review-labels .label-option').forEach(l=>l.classList.remove('selected'));
+  document.getElementById('review-text').value = '';
+  goPage('review');
+}
+
+function openWantUsers(id) {
+  event.stopPropagation();
+  currentShop = shopsData.find(s=>s.id===id);
+  const list = document.getElementById('want-users-list');
+  list.innerHTML = wantUsers.map((u,i) => `
+    <div class="user-list-item">
+      <div class="user-list-avatar">${u.avatar}</div>
+      <div class="user-list-info">
+        <div class="user-list-name">${u.name} <span class="level-badge" style="font-size:10px;padding:1px 6px;">🍜 ${u.level}</span></div>
+        <div class="user-list-bio">${u.bio}</div>
+      </div>
+      <button class="user-list-btn" onclick="openTeamupModal(${i})">组搭子</button>
+    </div>
+  `).join('');
+  document.getElementById('modal-want').classList.add('show');
+}
+
+function openTeamupModal(idx) {
+  document.getElementById('modal-teamup').classList.add('show');
+}
+
+function confirmTeamup() {
+  hideModal('modal-teamup');
+  hideModal('modal-want');
+  showToast('邀约已发送！');
+}
+
+function submitNeed() {
+  const title = document.getElementById('post-title').value.trim();
+  if(!title) { showToast('请填写标题'); return; }
+  showToast('需求发布成功！');
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-location').value = '';
+  document.getElementById('post-desc').value = '';
+  document.querySelectorAll('#post-pref .form-option').forEach(o=>o.classList.remove('selected'));
+  goPage('needs');
+}
+
+function submitReview() {
+  if(currentRating===0) { showToast('请选择评分'); return; }
+  showToast('评价提交成功！');
+  goPage('shops');
+}
+
+// ===================== STARS =====================
+function updateStars() {
+  document.querySelectorAll('#rating-stars .star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= currentRating);
+  });
+}
+document.querySelectorAll('#rating-stars .star').forEach(s => {
+  s.addEventListener('click', ()=>{ currentRating = parseInt(s.dataset.val); updateStars(); });
+});
+
+// ===================== FORM OPTIONS =====================
+document.querySelectorAll('.form-options').forEach(group => {
+  group.addEventListener('click', e => {
+    const opt = e.target.closest('.form-option');
+    if(!opt) return;
+    if(group.id==='post-pref') {
+      opt.classList.toggle('selected');
+    } else {
+      group.querySelectorAll('.form-option').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+    }
+  });
+});
+
+// ===================== LABEL OPTIONS =====================
+document.querySelectorAll('#review-labels .label-option').forEach(l => {
+  l.addEventListener('click', ()=>l.classList.toggle('selected'));
+});
+
+// ===================== FILTER MODAL =====================
+function openFilterModal(which) {
+  const modalId = which==='needs' ? 'modal-filter-needs' : 'modal-filter-shops';
+  if(which==='needs') {
+    syncFilterChips('modal-filter-type', activeTypeFilter);
+    syncFilterChips('modal-filter-pref', activePrefFilter);
+    syncFilterChips('modal-filter-budget', activeBudgetFilter);
+  } else {
+    syncFilterChips('modal-shop-filter-type', activeShopTypeFilter);
+    syncFilterChips('modal-shop-filter-scene', activeShopSceneFilter);
+  }
+  document.getElementById(modalId).classList.add('show');
+}
+
+function syncFilterChips(rowId, activeVal) {
+  const row = document.getElementById(rowId);
+  if(!row) return;
+  row.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.val === activeVal));
+}
+
+function setupModalFilter(rowId) {
+  const row = document.getElementById(rowId);
+  if(!row) return;
+  row.addEventListener('click', e => {
+    const chip = e.target.closest('.filter-chip');
+    if(!chip) return;
+    row.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+}
+
+setupModalFilter('modal-filter-type');
+setupModalFilter('modal-filter-pref');
+setupModalFilter('modal-filter-budget');
+setupModalFilter('modal-shop-filter-type');
+setupModalFilter('modal-shop-filter-scene');
+
+function applyNeedFilters() {
+  const typeChip = document.querySelector('#modal-filter-type .filter-chip.active');
+  const prefChip = document.querySelector('#modal-filter-pref .filter-chip.active');
+  const budgetChip = document.querySelector('#modal-filter-budget .filter-chip.active');
+  activeTypeFilter = typeChip ? typeChip.dataset.val : 'all';
+  activePrefFilter = prefChip ? prefChip.dataset.val : 'all';
+  activeBudgetFilter = budgetChip ? budgetChip.dataset.val : 'all';
+  hideModal('modal-filter-needs');
+  renderNeeds();
+}
+
+function resetNeedFilters() {
+  document.querySelectorAll('#modal-filter-type .filter-chip, #modal-filter-pref .filter-chip, #modal-filter-budget .filter-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('#modal-filter-type .filter-chip[data-val="all"]').classList.add('active');
+  document.querySelector('#modal-filter-pref .filter-chip[data-val="all"]').classList.add('active');
+  document.querySelector('#modal-filter-budget .filter-chip[data-val="all"]').classList.add('active');
+}
+
+function applyShopFilters() {
+  const typeChip = document.querySelector('#modal-shop-filter-type .filter-chip.active');
+  const sceneChip = document.querySelector('#modal-shop-filter-scene .filter-chip.active');
+  activeShopTypeFilter = typeChip ? typeChip.dataset.val : 'all';
+  activeShopSceneFilter = sceneChip ? sceneChip.dataset.val : 'all';
+  hideModal('modal-filter-shops');
+  renderShops();
+}
+
+function resetShopFilters() {
+  document.querySelectorAll('#modal-shop-filter-type .filter-chip, #modal-shop-filter-scene .filter-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('#modal-shop-filter-type .filter-chip[data-val="all"]').classList.add('active');
+  document.querySelector('#modal-shop-filter-scene .filter-chip[data-val="all"]').classList.add('active');
+}
+
+// ===================== INIT =====================
+renderNeeds();
+renderShops();
+</script>
+</body>
+</html>
