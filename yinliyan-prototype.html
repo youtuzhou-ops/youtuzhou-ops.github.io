@@ -1,0 +1,2958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>引力盐 - 找搭子，就上引力盐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #e8e8e8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #f5f5f5;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+        }
+        
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0 20px;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 4px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item.active {
+            color: #6366f1;
+        }
+        
+        .nav-item.active .nav-icon {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-icon {
+            font-size: 22px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        /* 页面切换 */
+        .page {
+            display: none;
+            padding-bottom: 80px;
+            min-height: 100vh;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 顶部标题栏 */
+        .header-bar {
+            background: #fff;
+            color: #1f2937;
+            padding: 14px 16px;
+            padding-top: 50px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-title i {
+            font-size: 20px;
+            color: #6366f1;
+        }
+        
+        .header-action {
+            font-size: 14px;
+            color: #6366f1;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .header-action:active {
+            background: #f3f4f6;
+        }
+        
+        /* ===== 筛选浮层 ===== */
+        .filter-trigger-bar {
+            background: #fff;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .filter-trigger-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #f3f4f6;
+            font-size: 13px;
+            font-weight: 500;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .filter-trigger-btn.active {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+        }
+        
+        .filter-trigger-btn:active {
+            transform: scale(0.97);
+        }
+        
+        .filter-active-count {
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .filter-float-panel {
+            background: #fff;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+            padding: 0 16px;
+        }
+        
+        .filter-float-panel.open {
+            max-height: 600px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .filter-group {
+            margin-bottom: 14px;
+        }
+        
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .filter-label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-tag {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        
+        .filter-tag.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        .filter-tag:active {
+            transform: scale(0.95);
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .filter-action-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-action-btn.primary {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        .filter-action-btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+        
+        /* 需求卡片 */
+        .demand-card {
+            background: white;
+            margin: 10px 16px;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .demand-card:active {
+            transform: scale(0.98);
+            background: #fafafa;
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .avatar.blue {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+        
+        .avatar.green {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+        }
+        
+        .avatar.purple {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+        }
+        
+        .avatar.orange {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .level-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .meta-info {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        
+        .status-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 8px;
+            background: #ecfdf5;
+            color: #059669;
+            font-weight: 500;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .card-tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .card-tag.price {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .card-desc {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-action-small {
+            padding: 6px 14px;
+            border-radius: 16px;
+            border: none;
+            background: #1f2937;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .card-stats {
+            font-size: 11px;
+            color: #9ca3af;
+            display: flex;
+            gap: 12px;
+        }
+        
+        /* 浮动发布按钮 */
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 16px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #1f2937;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fab:active {
+            transform: scale(0.9);
+        }
+        
+        /* ===== 弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 400;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 430px;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 16px 30px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: #f3f4f6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 14px;
+        }
+        
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            min-height: 90px;
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: #1f2937;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 6px;
+        }
+        
+        .submit-btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+        
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(31,41,55,0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 300;
+            transition: all 0.3s ease;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* ===== 详情页（小红书风格） ===== */
+        .detail-page {
+            position: fixed;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            background: white;
+            z-index: 250;
+            overflow-y: auto;
+            transition: top 0.35s ease;
+        }
+        
+        .detail-page.open {
+            top: 0;
+        }
+        
+        .detail-header {
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            padding-top: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .detail-back {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .detail-header-title {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .detail-more {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #6b7280;
+        }
+        
+        .detail-user-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+        }
+        
+        .detail-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .detail-user-info {
+            flex: 1;
+        }
+        
+        .detail-user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .detail-user-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        
+        .detail-follow-btn {
+            padding: 6px 16px;
+            border-radius: 16px;
+            border: 1px solid #ef4444;
+            background: white;
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .detail-follow-btn.following {
+            border-color: #e5e7eb;
+            color: #9ca3af;
+        }
+        
+        .detail-content {
+            padding: 0 16px 16px;
+        }
+        
+        .detail-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .detail-desc {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+        
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .detail-tag {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 14px;
+            background: #f3f4f6;
+            color: #6366f1;
+        }
+        
+        .detail-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .detail-img {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        
+        .detail-time {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        
+        .detail-actions-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #f5f5f5;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .detail-action-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px 12px;
+        }
+        
+        .detail-action-item.liked {
+            color: #ef4444;
+        }
+        
+        .detail-action-item.collected {
+            color: #f59e0b;
+        }
+        
+        /* 评论区 */
+        .comments-section {
+            padding: 16px;
+        }
+        
+        .comments-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+        
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .comment-body {
+            flex: 1;
+        }
+        
+        .comment-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+        
+        .comment-text {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.5;
+            margin-bottom: 4px;
+        }
+        
+        .comment-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        .detail-bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            padding: 8px 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 300;
+        }
+        
+        .detail-comment-input {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 20px;
+            border: none;
+            background: #f3f4f6;
+            font-size: 13px;
+            outline: none;
+        }
+        
+        .detail-bottom-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .detail-bottom-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: 11px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+        
+        .detail-bottom-action i {
+            font-size: 18px;
+        }
+        
+        /* ===== 收纳榜单 ===== */
+        .rank-item {
+            background: white;
+            margin: 10px 16px;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .rank-item:active {
+            transform: scale(0.98);
+            background: #fafafa;
+        }
+        
+        .rank-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .rank-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fbbf24;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .rank-number.silver {
+            background: #9ca3af;
+        }
+        
+        .rank-number.bronze {
+            background: #ea580c;
+        }
+        
+        .rank-info {
+            flex: 1;
+        }
+        
+        .rank-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .rank-badge {
+            font-size: 10px;
+            padding: 1px 7px;
+            border-radius: 6px;
+            background: #fecaca;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .rank-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+        }
+        
+        .stars {
+            color: #fbbf24;
+            font-size: 11px;
+        }
+        
+        .rank-score {
+            font-size: 12px;
+            color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .rank-count {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        .rank-tags {
+            display: flex;
+            gap: 5px;
+            margin-top: 4px;
+        }
+        
+        .rank-tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .rank-tag.price {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .qa-section {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-top: 10px;
+        }
+        
+        .qa-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .qa-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .qa-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .qa-question {
+            font-size: 12px;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .qa-answer {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        
+        .qa-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .qa-text {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.5;
+            flex: 1;
+        }
+        
+        .qa-level {
+            font-size: 10px;
+            color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .rank-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .rank-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .rank-btn.primary {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        .rank-btn:active {
+            transform: scale(0.97);
+        }
+        
+        /* 收纳筛选标签 */
+        .storage-filter-bar {
+            background: white;
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .storage-filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .storage-filter-tag {
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #4b5563;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .storage-filter-tag.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        /* ===== 资产展示墙 ===== */
+        .profile-header {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            padding: 50px 16px 20px;
+            position: relative;
+        }
+        
+        .profile-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .profile-info h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        
+        .profile-info p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
+        .collection-filters {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .collection-filters::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .collection-filter {
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #4b5563;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .collection-filter.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        .collection-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 12px 16px 20px;
+        }
+        
+        .collection-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .collection-item:active {
+            transform: scale(0.97);
+        }
+        
+        .collection-img {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            position: relative;
+        }
+        
+        .collection-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 6px 8px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+            display: flex;
+            gap: 8px;
+            color: white;
+            font-size: 11px;
+        }
+        
+        .collection-info {
+            padding: 8px 10px;
+        }
+        
+        .collection-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .collection-meta {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+        
+        /* ===== 资产详情页 ===== */
+        .asset-detail-img {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+        }
+        
+        .asset-detail-info {
+            padding: 16px;
+        }
+        
+        .asset-detail-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .asset-detail-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .asset-detail-meta-item {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        
+        .asset-detail-meta-item span {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .asset-detail-desc {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+        
+        .asset-detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .asset-detail-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .asset-detail-btn.primary {
+            background: #1f2937;
+            color: white;
+        }
+        
+        .asset-detail-btn.secondary {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .asset-detail-btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+        
+        /* ===== 收纳详情页 ===== */
+        .storage-detail-header {
+            padding: 16px;
+        }
+        
+        .storage-detail-rank {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .storage-detail-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .storage-detail-score {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .storage-detail-desc {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.7;
+        }
+        
+        /* ===== 评分星星 ===== */
+        .star-rating {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 14px 0;
+        }
+        
+        .star-rating i {
+            font-size: 28px;
+            color: #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .star-rating i.active {
+            color: #fbbf24;
+        }
+        
+        .star-rating i:active {
+            transform: scale(1.2);
+        }
+        
+        /* ===== 上传区域 ===== */
+        .upload-area {
+            border: 2px dashed #e5e7eb;
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .upload-area:active {
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+        
+        .upload-area i {
+            font-size: 28px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        
+        .upload-area p {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #9ca3af;
+        }
+        
+        .empty-state i {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            font-size: 13px;
+        }
+        
+        /* ===== 提问按钮 ===== */
+        .ask-btn {
+            font-size: 12px;
+            color: #6366f1;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        
+        /* ===== 标签组横向滚动 ===== */
+        .scroll-tags {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+        
+        .scroll-tags::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 圈子类型选择 */
+        .category-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .category-option.active {
+            border-color: #1f2937;
+            background: #f9fafb;
+        }
+        
+        .category-option:active {
+            transform: scale(0.98);
+        }
+        
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .category-info {
+            flex: 1;
+        }
+        
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .category-desc {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        
+        .category-check {
+            font-size: 14px;
+            color: #1f2937;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .category-option.active .category-check {
+            opacity: 1;
+        }
+        
+        /* 列表信息栏 */
+        .list-info-bar {
+            background: white;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: #9ca3af;
+            border-bottom: 1px solid #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Toast 提示 -->
+        <div class="toast" id="toast"></div>
+        
+        <!-- ========== 需求广场页面 ========== -->
+        <div class="page active" id="page-demand">
+            <div class="header-bar">
+                <div class="header-title">
+                    <i class="fas fa-rocket"></i>
+                    需求广场
+                </div>
+            </div>
+            
+            <div class="filter-trigger-bar">
+                <div style="font-size: 13px; color: #6b7280;">共 5 条需求</div>
+                <button class="filter-trigger-btn" id="filter-trigger" onclick="toggleFilterPanel()">
+                    <i class="fas fa-sliders-h"></i>
+                    筛选
+                </button>
+            </div>
+            
+            <div class="filter-float-panel" id="filter-panel">
+                <div class="filter-group">
+                    <div class="filter-label">类型</div>
+                    <div class="filter-tags">
+                        <div class="filter-tag active" data-filter="type" data-value="all">全部</div>
+                        <div class="filter-tag" data-filter="type" data-value="画师">画师</div>
+                        <div class="filter-tag" data-filter="type" data-value="毛娘">毛娘</div>
+                        <div class="filter-tag" data-filter="type" data-value="妆娘">妆娘</div>
+                        <div class="filter-tag" data-filter="type" data-value="cos搭子">cos搭子</div>
+                        <div class="filter-tag" data-filter="type" data-value="委托">委托</div>
+                        <div class="filter-tag" data-filter="type" data-value="OC收出">OC收出</div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">细分需求</div>
+                    <div class="filter-tags">
+                        <div class="filter-tag active" data-filter="sub" data-value="all">全部</div>
+                        <div class="filter-tag" data-filter="sub" data-value="约稿">约稿</div>
+                        <div class="filter-tag" data-filter="sub" data-value="接稿">接稿</div>
+                        <div class="filter-tag" data-filter="sub" data-value="找搭子">找搭子</div>
+                        <div class="filter-tag" data-filter="sub" data-value="出设定">出设定</div>
+                        <div class="filter-tag" data-filter="sub" data-value="收设定">收设定</div>
+                        <div class="filter-tag" data-filter="sub" data-value="找陪玩">找陪玩</div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">预算</div>
+                    <div class="filter-tags">
+                        <div class="filter-tag active" data-filter="budget" data-value="all">全部</div>
+                        <div class="filter-tag" data-filter="budget" data-value="100">¥100以下</div>
+                        <div class="filter-tag" data-filter="budget" data-value="300">¥100-300</div>
+                        <div class="filter-tag" data-filter="budget" data-value="500">¥300-500</div>
+                        <div class="filter-tag" data-filter="budget" data-value="500+">¥500+</div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">交付时间</div>
+                    <div class="filter-tags">
+                        <div class="filter-tag active" data-filter="time" data-value="all">全部</div>
+                        <div class="filter-tag" data-filter="time" data-value="week">一周内</div>
+                        <div class="filter-tag" data-filter="time" data-value="2week">两周内</div>
+                        <div class="filter-tag" data-filter="time" data-value="month">一个月内</div>
+                        <div class="filter-tag" data-filter="time" data-value="any">不限</div>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-action-btn" onclick="resetFilters()">重置</button>
+                    <button class="filter-action-btn primary" onclick="applyFilters()">确定</button>
+                </div>
+            </div>
+            
+            <div id="demand-list">
+                <div class="demand-card" data-type="画师" data-sub="约稿" data-budget="500" data-time="week" onclick="openDemandDetail(0)">
+                    <div class="card-header">
+                        <div class="avatar">林</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                画手小林
+                                <span class="level-badge">Lv.4</span>
+                            </div>
+                            <div class="meta-info">发布于 3小时前 · 约稿</div>
+                        </div>
+                        <div class="status-badge">接单中</div>
+                    </div>
+                    <div class="card-title">求约稿：OC立绘，预算300-500</div>
+                    <div class="card-tags">
+                        <span class="card-tag">画师</span>
+                        <span class="card-tag">约稿</span>
+                        <span class="card-tag">OC</span>
+                        <span class="card-tag">立绘</span>
+                        <span class="card-tag price">¥300-500</span>
+                    </div>
+                    <div class="card-desc">想给自己的OC约一张立绘，风格偏日系，有完整设定文档，希望一周内出稿。</div>
+                    <div class="card-footer">
+                        <div class="card-stats">
+                            <span><i class="fas fa-eye"></i> 128</span>
+                            <span><i class="fas fa-comment"></i> 6</span>
+                        </div>
+                        <button class="card-action-small" onclick="event.stopPropagation(); handleAction('接单')">我要接单</button>
+                    </div>
+                </div>
+                
+                <div class="demand-card" data-type="毛娘" data-sub="接稿" data-budget="300" data-time="2week" onclick="openDemandDetail(1)">
+                    <div class="card-header">
+                        <div class="avatar blue">花</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                毛娘阿花
+                                <span class="level-badge">Lv.3</span>
+                            </div>
+                            <div class="meta-info">发布于 1天前 · 接毛</div>
+                        </div>
+                        <div class="status-badge">接单中</div>
+                    </div>
+                    <div class="card-title">接毛娘单：擅长反重力、贴片</div>
+                    <div class="card-tags">
+                        <span class="card-tag">毛娘</span>
+                        <span class="card-tag">反重力</span>
+                        <span class="card-tag">贴片</span>
+                        <span class="card-tag price">¥150起</span>
+                    </div>
+                    <div class="card-desc">有3年做毛经验，擅长反重力造型和贴片，可接加急单，排期到7月中旬。</div>
+                    <div class="card-footer">
+                        <div class="card-stats">
+                            <span><i class="fas fa-eye"></i> 89</span>
+                            <span><i class="fas fa-comment"></i> 3</span>
+                        </div>
+                        <button class="card-action-small" onclick="event.stopPropagation(); handleAction('约单')">我要约单</button>
+                    </div>
+                </div>
+                
+                <div class="demand-card" data-type="cos搭子" data-sub="找搭子" data-budget="100" data-time="month" onclick="openDemandDetail(2)">
+                    <div class="card-header">
+                        <div class="avatar green">夏</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                夏目友人
+                                <span class="level-badge">Lv.5</span>
+                            </div>
+                            <div class="meta-info">发布于 2小时前 · 找搭子</div>
+                        </div>
+                        <div class="status-badge">寻找中</div>
+                    </div>
+                    <div class="card-title">7月BW漫展求萧逸搭子</div>
+                    <div class="card-tags">
+                        <span class="card-tag">cos搭子</span>
+                        <span class="card-tag">漫展</span>
+                        <span class="card-tag">光夜</span>
+                        <span class="card-tag">萧逸</span>
+                    </div>
+                    <div class="card-desc">计划出萧逸，想找一位出女主的搭子一起逛展，可以互相拍照，有经验优先~</div>
+                    <div class="card-footer">
+                        <div class="card-stats">
+                            <span><i class="fas fa-eye"></i> 256</span>
+                            <span><i class="fas fa-comment"></i> 12</span>
+                        </div>
+                        <button class="card-action-small" onclick="event.stopPropagation(); handleAction('申请搭子')">申请搭子</button>
+                    </div>
+                </div>
+                
+                <div class="demand-card" data-type="委托" data-sub="找陪玩" data-budget="500+" data-time="any" onclick="openDemandDetail(3)">
+                    <div class="card-header">
+                        <div class="avatar purple">星</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                星星糖
+                                <span class="level-badge">Lv.2</span>
+                            </div>
+                            <div class="meta-info">发布于 5小时前 · 委托</div>
+                        </div>
+                        <div class="status-badge">寻找中</div>
+                    </div>
+                    <div class="card-title">找委托老师：陆沉生日委托</div>
+                    <div class="card-tags">
+                        <span class="card-tag">委托</span>
+                        <span class="card-tag">光夜</span>
+                        <span class="card-tag">陆沉</span>
+                        <span class="card-tag price">¥800+</span>
+                    </div>
+                    <div class="card-desc">想找一位能出陆沉的老师，希望有经验、会互动，生日当天约会一天，预算充足。</div>
+                    <div class="card-footer">
+                        <div class="card-stats">
+                            <span><i class="fas fa-eye"></i> 412</span>
+                            <span><i class="fas fa-comment"></i> 8</span>
+                        </div>
+                        <button class="card-action-small" onclick="event.stopPropagation(); handleAction('申请委托')">申请委托</button>
+                    </div>
+                </div>
+                
+                <div class="demand-card" data-type="OC收出" data-sub="出设定" data-budget="300" data-time="week" onclick="openDemandDetail(4)">
+                    <div class="card-header">
+                        <div class="avatar orange">月</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                月光族
+                                <span class="level-badge">Lv.4</span>
+                            </div>
+                            <div class="meta-info">发布于 1天前 · 出设定</div>
+                        </div>
+                        <div class="status-badge">出售中</div>
+                    </div>
+                    <div class="card-title">出设：西幻风女战士，带三视图</div>
+                    <div class="card-tags">
+                        <span class="card-tag">OC收出</span>
+                        <span class="card-tag">出设定</span>
+                        <span class="card-tag">西幻</span>
+                        <span class="card-tag price">¥200</span>
+                    </div>
+                    <div class="card-desc">养了三年的OC，因为个人原因出掉，有完整设定文档和三视图，可小刀。</div>
+                    <div class="card-footer">
+                        <div class="card-stats">
+                            <span><i class="fas fa-eye"></i> 178</span>
+                            <span><i class="fas fa-comment"></i> 5</span>
+                        </div>
+                        <button class="card-action-small" onclick="event.stopPropagation(); handleAction('收设定')">我要收设定</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="height: 20px;"></div>
+        </div>
+        
+        <!-- ========== 需求详情页 ========== -->
+        <div class="detail-page" id="demand-detail">
+            <div class="detail-header">
+                <button class="detail-back" onclick="closeDemandDetail()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="detail-header-title">需求详情</div>
+                <button class="detail-more" onclick="showToast('更多功能即将上线')">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            <div class="detail-user-bar">
+                <div class="detail-avatar" id="detail-avatar">林</div>
+                <div class="detail-user-info">
+                    <div class="detail-user-name" id="detail-user-name">画手小林</div>
+                    <div class="detail-user-meta" id="detail-user-meta">发布于 3小时前 · 约稿</div>
+                </div>
+                <button class="detail-follow-btn" id="detail-follow-btn" onclick="toggleFollow()">关注</button>
+            </div>
+            <div class="detail-content">
+                <div class="detail-title" id="detail-title">求约稿：OC立绘，预算300-500</div>
+                <div class="detail-desc" id="detail-desc">想给自己的OC约一张立绘，风格偏日系，有完整设定文档，希望一周内出稿。参考风格见下图，欢迎带作品来戳~</div>
+                <div class="detail-images">
+                    <div class="detail-img" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">🎨</div>
+                    <div class="detail-img" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">✏️</div>
+                </div>
+                <div class="detail-tags" id="detail-tags">
+                    <span class="detail-tag">画师</span>
+                    <span class="detail-tag">约稿</span>
+                    <span class="detail-tag">OC</span>
+                    <span class="detail-tag">立绘</span>
+                    <span class="detail-tag">日系</span>
+                </div>
+                <div class="detail-time" id="detail-time">发布于 2026-07-01 14:30</div>
+                <div class="detail-actions-row">
+                    <div class="detail-action-item" onclick="toggleDetailLike(this)">
+                        <i class="far fa-heart"></i>
+                        <span>12</span>
+                    </div>
+                    <div class="detail-action-item" onclick="toggleDetailCollect(this)">
+                        <i class="far fa-star"></i>
+                        <span>5</span>
+                    </div>
+                    <div class="detail-action-item" onclick="showToast('分享功能即将上线')">
+                        <i class="fas fa-share"></i>
+                        <span>分享</span>
+                    </div>
+                </div>
+            </div>
+            <div class="comments-section">
+                <div class="comments-title">评论 (6)</div>
+                <div class="comment-item">
+                    <div class="comment-avatar" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">蓝</div>
+                    <div class="comment-body">
+                        <div class="comment-name">蓝画画</div>
+                        <div class="comment-text">这边可以接！ portfolio在主页，风格应该符合你的要求</div>
+                        <div class="comment-time">2小时前</div>
+                    </div>
+                </div>
+                <div class="comment-item">
+                    <div class="comment-avatar" style="background: linear-gradient(135deg, #f093fb, #f5576c);">喵</div>
+                    <div class="comment-body">
+                        <div class="comment-name">喵画师</div>
+                        <div class="comment-text">预算300-500的话，精度和复杂度需要再沟通一下，可以私聊~</div>
+                        <div class="comment-time">1小时前</div>
+                    </div>
+                </div>
+                <div class="comment-item">
+                    <div class="comment-avatar" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">草</div>
+                    <div class="comment-body">
+                        <div class="comment-name">草莓酱</div>
+                        <div class="comment-text">同蹲一个画师！楼主的OC设定看起来好棒</div>
+                        <div class="comment-time">30分钟前</div>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 80px;"></div>
+        </div>
+        
+        <!-- 需求详情页底部栏（移出fixed容器确保真正吸底） -->
+        <div class="detail-bottom-bar" id="demand-bottom-bar" style="display: none;">
+            <input type="text" class="detail-comment-input" placeholder="说点什么..." id="detail-comment-input">
+            <div class="detail-bottom-actions">
+                <div class="detail-bottom-action" onclick="showToast('点赞功能')">
+                    <i class="far fa-heart"></i>
+                    <span>12</span>
+                </div>
+                <div class="detail-bottom-action" onclick="showToast('收藏功能')">
+                    <i class="far fa-star"></i>
+                    <span>5</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ========== 资产展示墙页面 ========== -->
+        <div class="page" id="page-asset">
+            <div class="profile-header">
+                <div class="profile-user">
+                    <div class="profile-avatar">🎨</div>
+                    <div class="profile-info">
+                        <h2>猪大肠 <i class="fas fa-pencil-alt" style="font-size: 13px; opacity: 0.7;"></i></h2>
+                        <p>UID: 2048 · 痛文化圈 Lv.4</p>
+                    </div>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">128</div>
+                        <div class="stat-label">件藏品</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">涉及IP</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">藏品类型</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="collection-filters">
+                <div class="collection-filter active" data-cat="all">全部</div>
+                <div class="collection-filter" data-cat="badge">吧唧</div>
+                <div class="collection-filter" data-cat="acrylic">亚克力</div>
+                <div class="collection-filter" data-cat="ticket">镭射票</div>
+                <div class="collection-filter" data-cat="plush">毛绒</div>
+                <div class="collection-filter" data-cat="photo">拍立得</div>
+                <div class="collection-filter" data-cat="paper">色纸</div>
+            </div>
+            
+            <div class="collection-grid" id="collection-grid">
+                <div class="collection-item" data-cat="badge" onclick="openAssetDetail(0)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">
+                        🏐
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 234</span>
+                            <span><i class="fas fa-heart"></i> 45</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">排球少年 及川彻</div>
+                        <div class="collection-meta">队旗闪吧唧 · ¥65</div>
+                    </div>
+                </div>
+                
+                <div class="collection-item" data-cat="acrylic" onclick="openAssetDetail(1)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">
+                        🖼️
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 567</span>
+                            <span><i class="fas fa-heart"></i> 89</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">光夜 萧逸 立牌</div>
+                        <div class="collection-meta">生日限定 · ¥128</div>
+                    </div>
+                </div>
+                
+                <div class="collection-item" data-cat="plush" onclick="openAssetDetail(2)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #d299c2, #fef9d7);">
+                        🧸
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 123</span>
+                            <span><i class="fas fa-heart"></i> 32</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">咒术回战 五条悟</div>
+                        <div class="collection-meta">努努毛绒 · ¥89</div>
+                    </div>
+                </div>
+                
+                <div class="collection-item" data-cat="photo" onclick="openAssetDetail(3)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #89f7fe, #66a6ff);">
+                        📷
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 89</span>
+                            <span><i class="fas fa-heart"></i> 21</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">蓝锁 凪诚士郎</div>
+                        <div class="collection-meta">拍立得set · ¥45</div>
+                    </div>
+                </div>
+                
+                <div class="collection-item" data-cat="ticket" onclick="openAssetDetail(4)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #f5f7fa, #c3cfe2);">
+                        🎫
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 312</span>
+                            <span><i class="fas fa-heart"></i> 67</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">原神 钟离</div>
+                        <div class="collection-meta">镭射票套组 · ¥35</div>
+                    </div>
+                </div>
+                
+                <div class="collection-item" data-cat="badge" onclick="openAssetDetail(5)">
+                    <div class="collection-img" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+                        ⭐
+                        <div class="collection-overlay">
+                            <span><i class="fas fa-eye"></i> 456</span>
+                            <span><i class="fas fa-heart"></i> 78</span>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        <div class="collection-name">崩铁 丹恒</div>
+                        <div class="collection-meta">星穹铁道吧唧 · ¥45</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ========== 资产详情页 ========== -->
+        <div class="detail-page" id="asset-detail">
+            <div class="detail-header" style="padding-top: 50px;">
+                <button class="detail-back" onclick="closeAssetDetail()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="detail-header-title">藏品详情</div>
+                <button class="detail-more" onclick="showToast('更多功能即将上线')">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            <div class="asset-detail-img" id="asset-detail-img" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">
+                🏐
+            </div>
+            <div class="asset-detail-info">
+                <div class="asset-detail-name" id="asset-detail-name">排球少年 及川彻 队旗闪吧唧</div>
+                <div class="asset-detail-meta">
+                    <div class="asset-detail-meta-item">类型：<span id="asset-detail-type">吧唧</span></div>
+                    <div class="asset-detail-meta-item">价格：<span id="asset-detail-price">¥65</span></div>
+                    <div class="asset-detail-meta-item">入荷：<span id="asset-detail-date">2026.06.12</span></div>
+                </div>
+                <div class="detail-actions-row" style="margin-bottom: 16px;">
+                    <div class="detail-action-item" onclick="toggleDetailLike(this)">
+                        <i class="far fa-heart"></i>
+                        <span>45</span>
+                    </div>
+                    <div class="detail-action-item" onclick="toggleDetailCollect(this)">
+                        <i class="far fa-star"></i>
+                        <span>12</span>
+                    </div>
+                    <div class="detail-action-item" onclick="showToast('分享功能即将上线')">
+                        <i class="fas fa-share"></i>
+                        <span>分享</span>
+                    </div>
+                </div>
+                <div class="asset-detail-desc" id="asset-detail-desc">
+                    排球少年及川彻队旗闪吧唧，超好看的闪工艺！在A店抽到的，实物比照片更闪。默认初伤，可拍对光视频。
+                </div>
+                <div class="asset-detail-actions">
+                    <button class="asset-detail-btn secondary" onclick="showToast('聊一聊功能即将上线')">
+                        <i class="fas fa-comment"></i> 聊一聊
+                    </button>
+                    <button class="asset-detail-btn primary" onclick="showToast('换物请求已发送')">
+                        <i class="fas fa-exchange-alt"></i> 请求换物
+                    </button>
+                </div>
+            </div>
+            <div style="height: 20px;"></div>
+        </div>
+        
+        <!-- ========== 收纳好物榜单页面 ========== -->
+        <div class="page" id="page-storage">
+            <div class="header-bar">
+                <div class="header-title">
+                    <i class="fas fa-trophy"></i>
+                    收纳好物榜单
+                </div>
+                <div class="header-action" onclick="showStorageFilter()">
+                    痛文化 <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                </div>
+            </div>
+            
+            <div class="storage-filter-bar" id="storage-filter-bar">
+                <div class="storage-filter-tag active" data-cat="all">全部</div>
+                <div class="storage-filter-tag" data-cat="badge">吧唧收纳</div>
+                <div class="storage-filter-tag" data-cat="acrylic">亚克力收纳</div>
+                <div class="storage-filter-tag" data-cat="stand">立牌展示</div>
+                <div class="storage-filter-tag" data-cat="paper">纸片收纳</div>
+                <div class="storage-filter-tag" data-cat="plush">毛绒收纳</div>
+            </div>
+            
+            <div class="list-info-bar">按好用程度排序 · 共 15 件好物</div>
+            
+            <div id="rank-list">
+                <div class="rank-item" onclick="openStorageDetail(0)">
+                    <div class="rank-header">
+                        <div class="rank-number">1</div>
+                        <div class="rank-info">
+                            <div class="rank-name">
+                                亚克力展示架
+                                <span class="rank-badge">必买</span>
+                            </div>
+                            <div class="rank-meta">
+                                <span class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></span>
+                                <span class="rank-score">4.9</span>
+                                <span class="rank-count">(3,421人)</span>
+                            </div>
+                            <div class="rank-tags">
+                                <span class="rank-tag">阶梯展示</span>
+                                <span class="rank-tag price">¥25-80</span>
+                                <span class="rank-tag">透明/黑色</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-section">
+                        <div class="qa-title"><i class="fas fa-comments"></i> 场景问答</div>
+                        <div class="qa-item">
+                            <div class="qa-question">Q: 吧唧比较多，买几层的合适？</div>
+                            <div class="qa-answer">
+                                <div class="qa-avatar">喵</div>
+                                <div>
+                                    <div class="qa-text">50个吧唧以内买3层，100个以上买5层，记得量柜子深度。</div>
+                                    <span class="qa-level">Lv.4</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="qa-item">
+                            <div class="qa-question">Q: 亚克力会发黄吗？</div>
+                            <div class="qa-answer">
+                                <div class="qa-avatar" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">樱</div>
+                                <div>
+                                    <div class="qa-text">选防UV的，普通亚克力晒一年会黄，我用的这款两年了还是透明的。</div>
+                                    <span class="qa-level">Lv.5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ask-btn" onclick="event.stopPropagation(); showToast('提问功能即将上线')">
+                            <i class="fas fa-plus-circle"></i> 我要提问
+                        </div>
+                    </div>
+                    <div class="rank-actions">
+                        <button class="rank-btn" onclick="event.stopPropagation(); openRatingModal('亚克力展示架')">
+                            <i class="fas fa-star"></i> 评分
+                        </button>
+                        <button class="rank-btn primary" onclick="event.stopPropagation(); openStorageDetail(0)">
+                            查看详情
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="rank-item" onclick="openStorageDetail(1)">
+                    <div class="rank-header">
+                        <div class="rank-number silver">2</div>
+                        <div class="rank-info">
+                            <div class="rank-name">
+                                密封收纳盒
+                                <span class="rank-badge">必买</span>
+                            </div>
+                            <div class="rank-meta">
+                                <span class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></span>
+                                <span class="rank-score">4.8</span>
+                                <span class="rank-count">(2,156人)</span>
+                            </div>
+                            <div class="rank-tags">
+                                <span class="rank-tag">防潮防虫</span>
+                                <span class="rank-tag price">¥15-40</span>
+                                <span class="rank-tag">多种尺寸</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-section">
+                        <div class="qa-title"><i class="fas fa-comments"></i> 场景问答</div>
+                        <div style="font-size: 12px; color: #9ca3af; text-align: center; padding: 8px;">
+                            暂无提问，成为第一个提问的人 →
+                        </div>
+                        <div class="ask-btn" onclick="event.stopPropagation(); showToast('提问功能即将上线')">
+                            <i class="fas fa-plus-circle"></i> 我要提问
+                        </div>
+                    </div>
+                    <div class="rank-actions">
+                        <button class="rank-btn" onclick="event.stopPropagation(); openRatingModal('密封收纳盒')">
+                            <i class="fas fa-star"></i> 评分
+                        </button>
+                        <button class="rank-btn primary" onclick="event.stopPropagation(); openStorageDetail(1)">
+                            查看详情
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="rank-item" onclick="openStorageDetail(2)">
+                    <div class="rank-header">
+                        <div class="rank-number bronze">3</div>
+                        <div class="rank-info">
+                            <div class="rank-name">
+                                干燥剂+湿度计
+                                <span class="rank-badge" style="background: #dbeafe; color: #1d4ed8;">推荐</span>
+                            </div>
+                            <div class="rank-meta">
+                                <span class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i></span>
+                                <span class="rank-score">4.6</span>
+                                <span class="rank-count">(1,892人)</span>
+                            </div>
+                            <div class="rank-tags">
+                                <span class="rank-tag">防潮必备</span>
+                                <span class="rank-tag price">¥10-30</span>
+                                <span class="rank-tag">可重复使用</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-section">
+                        <div class="qa-title"><i class="fas fa-comments"></i> 场景问答</div>
+                        <div class="qa-item">
+                            <div class="qa-question">Q: 多久换一次干燥剂？</div>
+                            <div class="qa-answer">
+                                <div class="qa-avatar" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">绿</div>
+                                <div>
+                                    <div class="qa-text">看湿度计，超过60%就换，南方建议一个月换一次。</div>
+                                    <span class="qa-level">Lv.3</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ask-btn" onclick="event.stopPropagation(); showToast('提问功能即将上线')">
+                            <i class="fas fa-plus-circle"></i> 我要提问
+                        </div>
+                    </div>
+                    <div class="rank-actions">
+                        <button class="rank-btn" onclick="event.stopPropagation(); openRatingModal('干燥剂+湿度计')">
+                            <i class="fas fa-star"></i> 评分
+                        </button>
+                        <button class="rank-btn primary" onclick="event.stopPropagation(); openStorageDetail(2)">
+                            查看详情
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="height: 20px;"></div>
+        </div>
+        
+        <!-- ========== 收纳详情页 ========== -->
+        <div class="detail-page" id="storage-detail">
+            <div class="detail-header" style="padding-top: 50px;">
+                <button class="detail-back" onclick="closeStorageDetail()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="detail-header-title">好物详情</div>
+                <button class="detail-more" onclick="showToast('更多功能即将上线')">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            <div style="padding: 16px;">
+                <div class="storage-detail-rank" id="storage-detail-rank">
+                    <i class="fas fa-trophy"></i> 第 1 名
+                </div>
+                <div class="storage-detail-name" id="storage-detail-name">亚克力展示架</div>
+                <div class="storage-detail-score">
+                    <span class="stars" style="color: #fbbf24; font-size: 14px;">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </span>
+                    <span style="font-size: 16px; font-weight: 700; color: #f59e0b;">4.9</span>
+                    <span style="font-size: 13px; color: #9ca3af;">(3,421人评分)</span>
+                </div>
+                <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                    <span class="rank-tag price">¥25-80</span>
+                    <span class="rank-tag">阶梯展示</span>
+                    <span class="rank-tag">透明/黑色</span>
+                </div>
+                <div class="storage-detail-desc" id="storage-detail-desc">
+                    亚克力展示架是谷子展示的首选好物，阶梯式设计可以让每个吧唧都清晰可见。透明款百搭，黑色款显高级。推荐买防UV材质，避免长时间阳光照射导致发黄。
+                </div>
+                <div style="margin-top: 16px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 10px;">用户评价</div>
+                    <div class="comment-item">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #f093fb, #f5576c);">喵</div>
+                        <div class="comment-body">
+                            <div class="comment-name">喵星人</div>
+                            <div class="comment-text">买了5层的，放100个吧唧刚好，质量很不错！</div>
+                            <div class="comment-time">3天前</div>
+                        </div>
+                    </div>
+                    <div class="comment-item">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">蓝</div>
+                        <div class="comment-body">
+                            <div class="comment-name">蓝色海洋</div>
+                            <div class="comment-text">防UV款确实不容易黄，用了半年还是透明的</div>
+                            <div class="comment-time">1周前</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rank-actions" style="margin-top: 20px;">
+                    <button class="rank-btn" onclick="openRatingModal('亚克力展示架')">
+                        <i class="fas fa-star"></i> 我要评分
+                    </button>
+                    <button class="rank-btn primary" onclick="showToast('加入收藏')">
+                        <i class="fas fa-heart"></i> 收藏
+                    </button>
+                </div>
+            </div>
+            <div style="height: 20px;"></div>
+        </div>
+        
+        <!-- 浮动发布按钮 -->
+        <button class="fab" id="fab-btn" onclick="openPublishModal()">
+            <i class="fas fa-plus"></i>
+        </button>
+        
+        <!-- ========== 发布需求弹窗 ========== -->
+        <div class="modal-overlay" id="publish-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">发布需求</div>
+                    <button class="modal-close" onclick="closeModal('publish-modal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">类型</label>
+                    <div class="filter-tags" style="margin-top: 6px;">
+                        <div class="filter-tag active pub-type" data-value="画师">画师</div>
+                        <div class="filter-tag pub-type" data-value="毛娘">毛娘</div>
+                        <div class="filter-tag pub-type" data-value="妆娘">妆娘</div>
+                        <div class="filter-tag pub-type" data-value="cos搭子">cos搭子</div>
+                        <div class="filter-tag pub-type" data-value="委托">委托</div>
+                        <div class="filter-tag pub-type" data-value="OC收出">OC收出</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">细分需求</label>
+                    <div class="filter-tags" style="margin-top: 6px;">
+                        <div class="filter-tag active pub-sub" data-value="约稿">约稿</div>
+                        <div class="filter-tag pub-sub" data-value="接稿">接稿</div>
+                        <div class="filter-tag pub-sub" data-value="找搭子">找搭子</div>
+                        <div class="filter-tag pub-sub" data-value="出设定">出设定</div>
+                        <div class="filter-tag pub-sub" data-value="收设定">收设定</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">标题</label>
+                    <input type="text" class="form-input" placeholder="简短描述你的需求" id="pub-title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">预算</label>
+                    <input type="text" class="form-input" placeholder="例如：300-500元" id="pub-budget">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">详细说明</label>
+                    <textarea class="form-textarea" placeholder="描述你的具体需求..." id="pub-desc"></textarea>
+                </div>
+                <button class="submit-btn" onclick="submitPublish()">发布</button>
+            </div>
+        </div>
+        
+        <!-- ========== 评分弹窗 ========== -->
+        <div class="modal-overlay" id="rating-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">评分</div>
+                    <button class="modal-close" onclick="closeModal('rating-modal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div style="text-align: center; margin-bottom: 6px;">
+                    <div style="font-size: 13px; color: #6b7280;">物品：<span id="rating-item-name" style="font-weight: 600; color: #1f2937;"></span></div>
+                </div>
+                <div class="star-rating" id="star-rating">
+                    <i class="fas fa-star" data-star="1" onclick="setStar(1)"></i>
+                    <i class="fas fa-star" data-star="2" onclick="setStar(2)"></i>
+                    <i class="fas fa-star" data-star="3" onclick="setStar(3)"></i>
+                    <i class="fas fa-star" data-star="4" onclick="setStar(4)"></i>
+                    <i class="fas fa-star" data-star="5" onclick="setStar(5)"></i>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">晒图</label>
+                    <div class="upload-area" onclick="showToast('图片上传功能即将上线')">
+                        <i class="fas fa-camera"></i>
+                        <p>点击上传图片</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">评价</label>
+                    <textarea class="form-textarea" placeholder="写下你的使用体验..." id="rating-comment"></textarea>
+                </div>
+                <button class="submit-btn" onclick="submitRating()">提交评分</button>
+            </div>
+        </div>
+        
+        <!-- ========== 圈子类型选择弹窗 ========== -->
+        <div class="modal-overlay" id="category-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">选择圈子</div>
+                    <button class="modal-close" onclick="closeModal('category-modal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="category-option active" data-cat="tong" onclick="selectCategory('tong', '痛文化')">
+                        <div class="category-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">痛</div>
+                        <div class="category-info">
+                            <div class="category-name">痛文化</div>
+                            <div class="category-desc">吧唧、亚克力、镭射票等谷子收纳</div>
+                        </div>
+                        <i class="fas fa-check category-check"></i>
+                    </div>
+                    <div class="category-option" data-cat="doll" onclick="selectCategory('doll', '棉花娃娃')">
+                        <div class="category-icon" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">娃</div>
+                        <div class="category-info">
+                            <div class="category-name">棉花娃娃</div>
+                            <div class="category-desc">娃衣、骨架、娃包、收纳展示</div>
+                        </div>
+                        <i class="fas fa-check category-check"></i>
+                    </div>
+                    <div class="category-option" data-cat="card" onclick="selectCategory('card', '小卡谷')">
+                        <div class="category-icon" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">卡</div>
+                        <div class="category-info">
+                            <div class="category-name">小卡谷</div>
+                            <div class="category-desc">卡册、卡膜、卡套、索引贴</div>
+                        </div>
+                        <i class="fas fa-check category-check"></i>
+                    </div>
+                    <div class="category-option" data-cat="stationery" onclick="selectCategory('stationery', '手账文具')">
+                        <div class="category-icon" style="background: linear-gradient(135deg, #d299c2, #fef9d7);">账</div>
+                        <div class="category-info">
+                            <div class="category-name">手账文具</div>
+                            <div class="category-desc">胶带、贴纸、离型本、收纳册</div>
+                        </div>
+                        <i class="fas fa-check category-check"></i>
+                    </div>
+                    <div class="category-option" data-cat="gumei" onclick="selectCategory('gumei', '谷美道具')">
+                        <div class="category-icon" style="background: linear-gradient(135deg, #89f7fe, #66a6ff);">美</div>
+                        <div class="category-info">
+                            <div class="category-name">谷美道具</div>
+                            <div class="category-desc">谷美框、背景板、打光灯、拍照道具</div>
+                        </div>
+                        <i class="fas fa-check category-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ========== 底部导航 ========== -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-page="page-demand">
+                <i class="fas fa-rocket nav-icon"></i>
+                <span class="nav-label">需求</span>
+            </div>
+            <div class="nav-item" data-page="page-asset">
+                <i class="fas fa-image nav-icon"></i>
+                <span class="nav-label">资产</span>
+            </div>
+            <div class="nav-item" data-page="page-storage">
+                <i class="fas fa-box nav-icon"></i>
+                <span class="nav-label">收纳</span>
+            </div>
+        </nav>
+    </div>
+    
+    <script>
+        // ===== 全局变量 =====
+        let currentRating = 0;
+        let currentRatingItem = '';
+        let isFollowing = false;
+        let filterPanelOpen = false;
+        
+        const demandData = [
+            { name: '画手小林', avatar: '林', avatarClass: '', meta: '发布于 3小时前 · 约稿', level: 'Lv.4', title: '求约稿：OC立绘，预算300-500', desc: '想给自己的OC约一张立绘，风格偏日系，有完整设定文档，希望一周内出稿。参考风格见下图，欢迎带作品来戳~', tags: ['画师','约稿','OC','立绘','日系'], time: '发布于 2026-07-01 14:30', likes: 12, collects: 5 },
+            { name: '毛娘阿花', avatar: '花', avatarClass: 'blue', meta: '发布于 1天前 · 接毛', level: 'Lv.3', title: '接毛娘单：擅长反重力、贴片', desc: '有3年做毛经验，擅长反重力造型和贴片，可接加急单，排期到7月中旬。欢迎带角色图来咨询~', tags: ['毛娘','接稿','反重力','贴片'], time: '发布于 2026-06-30 10:15', likes: 8, collects: 3 },
+            { name: '夏目友人', avatar: '夏', avatarClass: 'green', meta: '发布于 2小时前 · 找搭子', level: 'Lv.5', title: '7月BW漫展求萧逸搭子', desc: '计划出萧逸，想找一位出女主的搭子一起逛展，可以互相拍照，有经验优先~当天会准备无料！', tags: ['cos搭子','找搭子','漫展','光夜','萧逸'], time: '发布于 2026-07-01 12:00', likes: 25, collects: 8 },
+            { name: '星星糖', avatar: '星', avatarClass: 'purple', meta: '发布于 5小时前 · 委托', level: 'Lv.2', title: '找委托老师：陆沉生日委托', desc: '想找一位能出陆沉的老师，希望有经验、会互动，生日当天约会一天，预算充足。详情可以私聊沟通~', tags: ['委托','找陪玩','光夜','陆沉'], time: '发布于 2026-07-01 09:30', likes: 18, collects: 6 },
+            { name: '月光族', avatar: '月', avatarClass: 'orange', meta: '发布于 1天前 · 出设定', level: 'Lv.4', title: '出设：西幻风女战士，带三视图', desc: '养了三年的OC，因为个人原因出掉，有完整设定文档和三视图，可小刀。希望找到真心喜欢她的买家。', tags: ['OC收出','出设定','西幻','女战士'], time: '发布于 2026-06-30 16:45', likes: 10, collects: 4 }
+        ];
+        
+        const assetData = [
+            { name: '排球少年 及川彻 队旗闪吧唧', type: '吧唧', price: '¥65', date: '2026.06.12', emoji: '🏐', bg: 'linear-gradient(135deg, #ffecd2, #fcb69f)', desc: '排球少年及川彻队旗闪吧唧，超好看的闪工艺！在A店抽到的，实物比照片更闪。默认初伤，可拍对光视频。' },
+            { name: '光夜 萧逸 立牌', type: '亚克力', price: '¥128', date: '2026.05.20', emoji: '🖼️', bg: 'linear-gradient(135deg, #a8edea, #fed6e3)', desc: '光与夜之恋萧逸生日限定立牌，超大一个，底座有镭射效果。全新未拆封，默认官瑕。' },
+            { name: '咒术回战 五条悟 努努毛绒', type: '毛绒', price: '¥89', date: '2026.05.15', emoji: '🧸', bg: 'linear-gradient(135deg, #d299c2, #fef9d7)', desc: '咒术回战五条悟努努毛绒，超软超好rua！是有吊牌的正品，一直放在柜子里保存。' },
+            { name: '蓝锁 凪诚士郎 拍立得set', type: '拍立得', price: '¥45', date: '2026.05.08', emoji: '📷', bg: 'linear-gradient(135deg, #89f7fe, #66a6ff)', desc: '蓝色监狱凪诚士郎拍立得set，一套6张，都是不同柄图。会打包，送小礼物~' },
+            { name: '原神 钟离 镭射票套组', type: '镭射票', price: '¥35', date: '2026.04.28', emoji: '🎫', bg: 'linear-gradient(135deg, #f5f7fa, #c3cfe2)', desc: '原神钟离镭射票套组，包含3张不同柄图。镭射工艺很好看，对着光会变色。' },
+            { name: '崩铁 丹恒 星穹铁道吧唧', type: '吧唧', price: '¥45', date: '2026.04.20', emoji: '⭐', bg: 'linear-gradient(135deg, #fa709a, #fee140)', desc: '崩坏星穹铁道丹恒吧唧，官谷正品。有原袋，状态很好，无伤无锈。' }
+        ];
+        
+        let currentStorageCategory = 'tong';
+        
+        const storageDataMap = {
+            tong: [
+                { rank: 1, name: '亚克力展示架', score: '4.9', count: '3,421', badge: '必买', badgeColor: '', tags: ['阶梯展示','¥25-80','透明/黑色'], desc: '亚克力展示架是谷子展示的首选好物，阶梯式设计可以让每个吧唧都清晰可见。透明款百搭，黑色款显高级。推荐买防UV材质，避免长时间阳光照射导致发黄。', qa: [{q:'吧唧比较多，买几层的合适？',a:'50个吧唧以内买3层，100个以上买5层',u:'喵',lv:'Lv.4'},{q:'亚克力会发黄吗？',a:'选防UV的，普通亚克力晒一年会黄',u:'樱',lv:'Lv.5'}] },
+                { rank: 2, name: '密封收纳盒', score: '4.8', count: '2,156', badge: '必买', badgeColor: '', tags: ['防潮防虫','¥15-40','多种尺寸'], desc: '密封收纳盒是保存吧唧和纸片的必备好物。密封性好，可以有效防潮防虫。推荐买透明款，方便查看里面的物品。', qa: [] },
+                { rank: 3, name: '干燥剂+湿度计', score: '4.6', count: '1,892', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['防潮必备','¥10-30','可重复使用'], desc: '干燥剂和湿度计的组合是南方吃谷人的救星。可以随时监测湿度，及时更换干燥剂，保护谷子不受潮。', qa: [{q:'多久换一次干燥剂？',a:'看湿度计，超过60%就换，南方建议一个月换一次',u:'绿',lv:'Lv.3'}] },
+                { rank: 4, name: '吧唧保护套', score: '4.5', count: '1,523', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['防刮防磨','¥5-15','多种尺寸'], desc: '吧唧保护套可以有效防止吧唧表面刮花，透明的材质不影响展示效果。推荐买稍大一点的尺寸，方便套取。', qa: [{q:'保护套会影响吧唧的闪吗？',a:'不会，透明款完全不影响闪效果',u:'闪',lv:'Lv.4'}] },
+                { rank: 5, name: '镭射票收纳册', score: '4.4', count: '1,234', badge: '', badgeColor: '', tags: ['活页设计','¥20-50','大容量'], desc: '镭射票收纳册采用活页设计，可以自由增减内页。每页可放多张镭射票，封面透明可以DIY装饰。', qa: [] }
+            ],
+            doll: [
+                { rank: 1, name: '20cm娃衣收纳盒', score: '4.9', count: '2,876', badge: '必买', badgeColor: '', tags: ['透明可视','¥15-35','多层设计'], desc: '专门为20cm棉花娃娃设计的娃衣收纳盒，每层可以挂3-5套娃衣，透明设计一目了然。顶部还可以放头饰和小配件。', qa: [{q:'40cm的娃能放进去吗？',a:'这款是20cm专用的，40cm建议买大号的',u:'娃妈',lv:'Lv.5'}] },
+                { rank: 2, name: '娃用骨架', score: '4.8', count: '2,102', badge: '必买', badgeColor: '', tags: ['可动关节','¥8-20','有声/无声'], desc: '娃用骨架可以让棉花娃娃摆pose，分为有声和无声两种。安装简单，从脖子处塞入即可。推荐买轻有声款，摆pose更稳。', qa: [{q:'新手好装吗？',a:'第一次装可能需要20分钟，建议看教程视频',u:'手作',lv:'Lv.4'}] },
+                { rank: 3, name: '痛包/娃包', score: '4.7', count: '1,845', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['透明层','¥30-80','斜挎/手提'], desc: '痛包/娃包有透明展示层，可以带娃娃出门展示。有斜挎和手提两种款式，内部有固定带防止娃娃晃动。', qa: [{q:'能放几个20cm的娃？',a:'一般可以放2-3个，取决于包的尺寸',u:'出行',lv:'Lv.3'}] },
+                { rank: 4, name: '娃用腮红', score: '4.5', count: '1,567', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['易上色','¥12-25','多色可选'], desc: '娃用腮红专门为棉花娃娃设计，粉质细腻易上色。用棉签或化妆刷轻轻打圈即可，可以用卸妆水卸掉重新打。', qa: [] },
+                { rank: 5, name: '娃娃支架', score: '4.3', count: '987', badge: '', badgeColor: '', tags: ['稳固站立','¥5-15','可调节'], desc: '娃娃支架可以帮助棉花娃娃稳固站立，适合拍照展示。高度可调节，适配15-25cm的娃娃。', qa: [] }
+            ],
+            card: [
+                { rank: 1, name: '四宫格卡册', score: '4.9', count: '3,210', badge: '必买', badgeColor: '', tags: ['大容量','¥25-60','活页设计'], desc: '四宫格卡册是小卡收纳的首选，每页可以放8张卡（正反面）。活页设计方便整理，封面可以DIY。推荐买带拉链的款式，防止卡片掉落。', qa: [{q:'能放多少张卡？',a:'一般80页可以放640张，足够用了',u:'卡坑',lv:'Lv.5'}] },
+                { rank: 2, name: '卡膜（平口/封口）', score: '4.8', count: '2,876', badge: '必买', badgeColor: '', tags: ['高透材质','¥3-10','50-100张'], desc: '卡膜是保护小卡的第一道防线，分为平口和封口两种。推荐买CPP材质的高透款，20丝厚度刚好。封口款更适合长期存放。', qa: [{q:'平口和封口有什么区别？',a:'平口方便拿取，封口保护更好，长期存放建议封口',u:'膜王',lv:'Lv.4'}] },
+                { rank: 3, name: '索引贴', score: '4.6', count: '1,654', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['分类标记','¥5-15','多色可选'], desc: '索引贴可以帮助你快速找到想要的卡片，按成员、系列或稀有度分类。粘性适中，撕掉不会留胶。', qa: [] },
+                { rank: 4, name: '卡套（硬卡套）', score: '4.5', count: '1,432', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['防弯防折','¥8-20','多种尺寸'], desc: '硬卡套是出卡打包的必备品，可以有效防止卡片在运输过程中弯折。买的时候注意尺寸要匹配卡膜。', qa: [{q:'卡膜+卡套能一起用吗？',a:'可以，先套卡膜再套卡套，保护double',u:'打包',lv:'Lv.4'}] },
+                { rank: 5, name: '一宫格卡册', score: '4.3', count: '1,123', badge: '', badgeColor: '', tags: ['便携出行','¥15-35','单卡展示'], desc: '一宫格卡册适合带出门或者展示贵卡，每页只放一张卡，可以清楚地看到卡面。体积小巧，放包里很方便。', qa: [] }
+            ],
+            stationery: [
+                { rank: 1, name: '离型纸本', score: '4.9', count: '2,543', badge: '必买', badgeColor: '', tags: ['双面可用','¥15-40','A4/A5'], desc: '离型纸本用来收纳和展示胶带，双面都有离型纸，胶带贴上去撕下来不留胶。A5尺寸最适合随身携带，A4适合在家整理。', qa: [{q:'和纸胶带贴上去会掉吗？',a:'不会，离型纸表面有硅油，胶带可以反复贴撕',u:'手账',lv:'Lv.5'}] },
+                { rank: 2, name: '胶带收纳盒', score: '4.8', count: '2,198', badge: '必买', badgeColor: '', tags: ['分隔设计','¥20-50','大容量'], desc: '胶带收纳盒有多个分隔格，可以按系列或颜色分类存放整卷胶带。透明盖子方便查看内容，防尘又美观。', qa: [] },
+                { rank: 3, name: '贴纸收纳册', score: '4.6', count: '1,567', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['活页设计','¥15-35','防粘处理'], desc: '贴纸收纳册内页经过防粘处理，贴纸贴上去不会粘死，可以反复调整位置。适合收纳贴纸卷、贴纸包和单张贴纸。', qa: [{q:'贴纸贴上去会掉吗？',a:'不会掉，但可以用指甲轻松揭下来重新贴',u:'贴纸',lv:'Lv.3'}] },
+                { rank: 4, name: '剪刀笔刀套装', score: '4.5', count: '1,234', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['精准切割','¥12-30','安全帽设计'], desc: '剪刀笔刀套装包含小剪刀、笔刀和镊子，满足手账制作的各种切割需求。笔刀有安全帽，不用的时候盖上很安全。', qa: [] },
+                { rank: 5, name: '手账本皮套', score: '4.4', count: '987', badge: '', badgeColor: '', tags: ['保护封面','¥10-25','多尺寸'], desc: '手账本皮套可以保护手账本封面不被刮花，同时增加颜值。有透明款和印花款，可以根据个人喜好选择。', qa: [] }
+            ],
+            gumei: [
+                { rank: 1, name: '谷美框（亚克力）', score: '4.9', count: '2,345', badge: '必买', badgeColor: '', tags: ['多层设计','¥30-80','可替换背景'], desc: '谷美框是展示谷子的神器，亚克力材质通透度高。多层设计可以前后放置不同元素，背景纸可以自由替换，拍出不同风格的谷美图。', qa: [{q:'能放多大的吧唧？',a:'58mm和75mm的都有对应尺寸，买的时候看清楚',u:'谷美',lv:'Lv.5'}] },
+                { rank: 2, name: '拍照背景板', score: '4.8', count: '1,987', badge: '必买', badgeColor: '', tags: ['双面图案','¥15-40','多种风格'], desc: '拍照背景板双面都有图案，一面简约一面华丽。作为谷美拍照的背景非常出片，PVC材质防水耐脏，可以折叠收纳。', qa: [{q:'背景板会反光吗？',a:'哑光款不会反光，拍照更清晰',u:'摄影',lv:'Lv.4'}] },
+                { rank: 3, name: '补光灯（环形）', score: '4.7', count: '1,654', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['三色温','¥25-60','手机夹'], desc: '环形补光灯可以提供均匀柔和的光线，消除阴影。三色温可调，冷光适合拍吧唧，暖光适合拍毛绒。自带手机夹，方便固定拍摄角度。', qa: [] },
+                { rank: 4, name: '造景小道具', score: '4.5', count: '1,234', badge: '推荐', badgeColor: 'background: #dbeafe; color: #1d4ed8;', tags: ['仿真花/书','¥8-25','氛围感'], desc: '造景小道具包括仿真花、复古书、蕾丝布等，用来丰富谷美照片的层次感。小投入大效果，随便摆摆就很有氛围感。', qa: [] },
+                { rank: 5, name: '反光板（折叠）', score: '4.3', count: '876', badge: '', badgeColor: '', tags: ['金银双面','¥10-20','便携折叠'], desc: '反光板可以对暗部进行补光，金银双面满足不同色调需求。折叠后只有手掌大小，带出门拍谷非常方便。', qa: [] }
+            ]
+        };
+        
+        function getStorageData() {
+            return storageDataMap[currentStorageCategory] || storageDataMap.tong;
+        }
+        
+        // ===== Toast 提示 =====
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+        
+        // ===== 页面切换 =====
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const pageId = this.dataset.page;
+                
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+                
+                const fab = document.getElementById('fab-btn');
+                if (pageId === 'page-demand') {
+                    fab.style.display = 'flex';
+                } else {
+                    fab.style.display = 'none';
+                }
+                
+                window.scrollTo(0, 0);
+            });
+        });
+        
+        // ===== 筛选浮层 =====
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filter-panel');
+            const trigger = document.getElementById('filter-trigger');
+            filterPanelOpen = !filterPanelOpen;
+            
+            if (filterPanelOpen) {
+                panel.classList.add('open');
+                trigger.classList.add('active');
+            } else {
+                panel.classList.remove('open');
+                trigger.classList.remove('active');
+            }
+        }
+        
+        function applyFilters() {
+            filterDemands();
+            toggleFilterPanel();
+            showToast('筛选已应用');
+        }
+        
+        function resetFilters() {
+            document.querySelectorAll('.filter-tag[data-filter]').forEach(tag => {
+                const filterType = tag.dataset.filter;
+                const isFirst = !tag.previousElementSibling || tag.previousElementSibling.dataset.filter !== filterType;
+                if (isFirst) {
+                    tag.click();
+                }
+            });
+            filterDemands();
+            showToast('筛选已重置');
+        }
+        
+        // ===== 筛选标签交互 =====
+        document.querySelectorAll('.filter-tag[data-filter]').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const filterType = this.dataset.filter;
+                const siblings = document.querySelectorAll(`.filter-tag[data-filter="${filterType}"]`);
+                siblings.forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        function filterDemands() {
+            const typeFilter = document.querySelector('.filter-tag[data-filter="type"].active')?.dataset.value || 'all';
+            const subFilter = document.querySelector('.filter-tag[data-filter="sub"].active')?.dataset.value || 'all';
+            const budgetFilter = document.querySelector('.filter-tag[data-filter="budget"].active')?.dataset.value || 'all';
+            const timeFilter = document.querySelector('.filter-tag[data-filter="time"].active')?.dataset.value || 'all';
+            
+            document.querySelectorAll('.demand-card').forEach(card => {
+                const type = card.dataset.type;
+                const sub = card.dataset.sub;
+                const budget = card.dataset.budget;
+                const time = card.dataset.time;
+                
+                let show = true;
+                if (typeFilter !== 'all' && type !== typeFilter) show = false;
+                if (subFilter !== 'all' && sub !== subFilter) show = false;
+                if (budgetFilter !== 'all' && budget !== budgetFilter) show = false;
+                if (timeFilter !== 'all' && time !== timeFilter) show = false;
+                
+                card.style.display = show ? 'block' : 'none';
+            });
+            
+            const visibleCards = document.querySelectorAll('.demand-card[style="display: block;"], .demand-card:not([style*="display: none"])');
+            const listContainer = document.getElementById('demand-list');
+            
+            const oldEmpty = listContainer.querySelector('.empty-state');
+            if (oldEmpty) oldEmpty.remove();
+            
+            if (visibleCards.length === 0) {
+                listContainer.innerHTML += `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>没有找到匹配的需求</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // ===== 需求详情页 =====
+        function openDemandDetail(index) {
+            const data = demandData[index];
+            document.getElementById('detail-avatar').textContent = data.avatar;
+            document.getElementById('detail-avatar').className = 'detail-avatar ' + data.avatarClass;
+            document.getElementById('detail-user-name').textContent = data.name;
+            document.getElementById('detail-user-meta').textContent = data.meta;
+            document.getElementById('detail-title').textContent = data.title;
+            document.getElementById('detail-desc').textContent = data.desc;
+            document.getElementById('detail-time').textContent = data.time;
+            
+            const tagsContainer = document.getElementById('detail-tags');
+            tagsContainer.innerHTML = data.tags.map(t => `<span class="detail-tag">${t}</span>`).join('');
+            
+            const followBtn = document.getElementById('detail-follow-btn');
+            followBtn.textContent = '关注';
+            followBtn.classList.remove('following');
+            isFollowing = false;
+            
+            document.getElementById('demand-detail').classList.add('open');
+            document.getElementById('demand-bottom-bar').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDemandDetail() {
+            document.getElementById('demand-detail').classList.remove('open');
+            document.getElementById('demand-bottom-bar').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function toggleFollow() {
+            const btn = document.getElementById('detail-follow-btn');
+            isFollowing = !isFollowing;
+            if (isFollowing) {
+                btn.textContent = '已关注';
+                btn.classList.add('following');
+                showToast('关注成功');
+            } else {
+                btn.textContent = '关注';
+                btn.classList.remove('following');
+                showToast('已取消关注');
+            }
+        }
+        
+        function toggleDetailLike(el) {
+            el.classList.toggle('liked');
+            const icon = el.querySelector('i');
+            if (el.classList.contains('liked')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                showToast('已点赞');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                showToast('已取消点赞');
+            }
+        }
+        
+        function toggleDetailCollect(el) {
+            el.classList.toggle('collected');
+            const icon = el.querySelector('i');
+            if (el.classList.contains('collected')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                showToast('已收藏');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                showToast('已取消收藏');
+            }
+        }
+        
+        // ===== 资产详情页 =====
+        function openAssetDetail(index) {
+            const data = assetData[index];
+            document.getElementById('asset-detail-name').textContent = data.name;
+            document.getElementById('asset-detail-type').textContent = data.type;
+            document.getElementById('asset-detail-price').textContent = data.price;
+            document.getElementById('asset-detail-date').textContent = data.date;
+            document.getElementById('asset-detail-desc').textContent = data.desc;
+            
+            const imgDiv = document.getElementById('asset-detail-img');
+            imgDiv.textContent = data.emoji;
+            imgDiv.style.background = data.bg;
+            
+            document.getElementById('asset-detail').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeAssetDetail() {
+            document.getElementById('asset-detail').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        
+        // ===== 收纳详情页 =====
+        function openStorageDetail(index) {
+            const data = getStorageData()[index];
+            document.getElementById('storage-detail-rank').innerHTML = `<i class="fas fa-trophy"></i> 第 ${data.rank} 名`;
+            document.getElementById('storage-detail-name').textContent = data.name;
+            document.getElementById('storage-detail-desc').textContent = data.desc;
+            
+            document.getElementById('storage-detail').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeStorageDetail() {
+            document.getElementById('storage-detail').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        
+        // ===== 收纳筛选 =====
+        function showStorageFilter() {
+            document.getElementById('category-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function selectCategory(cat, name) {
+            currentStorageCategory = cat;
+            
+            document.querySelectorAll('.category-option').forEach(o => o.classList.remove('active'));
+            document.querySelector(`.category-option[data-cat="${cat}"]`).classList.add('active');
+            
+            document.querySelector('.header-action').innerHTML = `${name} <i class="fas fa-chevron-down" style="font-size: 10px;"></i>`;
+            
+            closeModal('category-modal');
+            renderStorageList();
+            showToast(`已切换到：${name}`);
+        }
+        
+        function renderStorageList() {
+            const data = getStorageData();
+            const listContainer = document.getElementById('rank-list');
+            
+            const categoryNames = { tong: '痛文化', doll: '棉花娃娃', card: '小卡谷', stationery: '手账文具', gumei: '谷美道具' };
+            
+            listContainer.innerHTML = data.map((item, index) => {
+                const numClass = index === 0 ? '' : (index === 1 ? 'silver' : (index === 2 ? 'bronze' : ''));
+                const badgeStyle = item.badgeColor || (item.badge ? '' : 'display:none;');
+                const qaHtml = item.qa && item.qa.length > 0 ? item.qa.map(q => `
+                    <div class="qa-item">
+                        <div class="qa-question">Q: ${q.q}</div>
+                        <div class="qa-answer">
+                            <div class="qa-avatar">${q.u[0]}</div>
+                            <div>
+                                <div class="qa-text">${q.a}</div>
+                                <span class="qa-level">${q.lv}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : `<div style="font-size: 12px; color: #9ca3af; text-align: center; padding: 8px;">暂无提问，成为第一个提问的人 →</div>`;
+                
+                return `
+                <div class="rank-item" onclick="openStorageDetail(${index})">
+                    <div class="rank-header">
+                        <div class="rank-number ${numClass}">${item.rank}</div>
+                        <div class="rank-info">
+                            <div class="rank-name">
+                                ${item.name}
+                                ${item.badge ? `<span class="rank-badge" style="${item.badgeColor}">${item.badge}</span>` : ''}
+                            </div>
+                            <div class="rank-meta">
+                                <span class="stars">${renderStars(item.score)}</span>
+                                <span class="rank-score">${item.score}</span>
+                                <span class="rank-count">(${item.count}人)</span>
+                            </div>
+                            <div class="rank-tags">
+                                ${item.tags.map(t => `<span class="rank-tag ${t.includes('¥') ? 'price' : ''}">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="qa-section">
+                        <div class="qa-title"><i class="fas fa-comments"></i> 场景问答</div>
+                        ${qaHtml}
+                        <div class="ask-btn" onclick="event.stopPropagation(); showToast('提问功能即将上线')">
+                            <i class="fas fa-plus-circle"></i> 我要提问
+                        </div>
+                    </div>
+                    <div class="rank-actions">
+                        <button class="rank-btn" onclick="event.stopPropagation(); openRatingModal('${item.name}')">
+                            <i class="fas fa-star"></i> 评分
+                        </button>
+                        <button class="rank-btn primary" onclick="event.stopPropagation(); openStorageDetail(${index})">
+                            查看详情
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            document.querySelector('.list-info-bar').textContent = `按好用程度排序 · 共 ${data.length} 件好物`;
+        }
+        
+        function renderStars(score) {
+            const s = parseFloat(score);
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= s) html += '<i class="fas fa-star"></i>';
+                else if (i - 0.5 <= s) html += '<i class="fas fa-star-half-alt"></i>';
+                else html += '<i class="far fa-star"></i>';
+            }
+            return html;
+        }
+        
+        document.querySelectorAll('.storage-filter-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.storage-filter-tag').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                showToast(`已切换到：${this.textContent}`);
+            });
+        });
+        
+        // ===== 发布弹窗内标签 =====
+        document.querySelectorAll('.pub-type').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.pub-type').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        document.querySelectorAll('.pub-sub').forEach(tag => {
+            tag.addEventListener('click', function() {
+                document.querySelectorAll('.pub-sub').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // ===== 弹窗控制 =====
+        function openPublishModal() {
+            document.getElementById('publish-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function openRatingModal(itemName) {
+            currentRatingItem = itemName;
+            document.getElementById('rating-item-name').textContent = itemName;
+            currentRating = 0;
+            updateStarDisplay();
+            document.getElementById('rating-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+        
+        // ===== 发布需求 =====
+        function submitPublish() {
+            const title = document.getElementById('pub-title').value.trim();
+            if (!title) {
+                showToast('请输入标题');
+                return;
+            }
+            showToast('需求发布成功！');
+            closeModal('publish-modal');
+            document.getElementById('pub-title').value = '';
+            document.getElementById('pub-budget').value = '';
+            document.getElementById('pub-desc').value = '';
+        }
+        
+        // ===== 评分功能 =====
+        function setStar(n) {
+            currentRating = n;
+            updateStarDisplay();
+        }
+        
+        function updateStarDisplay() {
+            document.querySelectorAll('#star-rating i').forEach((star, index) => {
+                if (index < currentRating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        function submitRating() {
+            if (currentRating === 0) {
+                showToast('请选择评分星级');
+                return;
+            }
+            showToast(`评分提交成功！你给「${currentRatingItem}」打了${currentRating}星`);
+            closeModal('rating-modal');
+            document.getElementById('rating-comment').value = '';
+            currentRating = 0;
+            updateStarDisplay();
+        }
+        
+        // ===== 需求卡片操作 =====
+        function handleAction(action) {
+            showToast(`已${action}，等待对方确认`);
+        }
+        
+        // ===== 藏品筛选 =====
+        document.querySelectorAll('.collection-filter').forEach(filter => {
+            filter.addEventListener('click', function() {
+                const cat = this.dataset.cat;
+                document.querySelectorAll('.collection-filter').forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                
+                document.querySelectorAll('.collection-item').forEach(item => {
+                    item.style.display = (cat === 'all' || item.dataset.cat === cat) ? 'block' : 'none';
+                });
+            });
+        });
+        
+        // ===== 初始化 =====
+        document.addEventListener('DOMContentLoaded', function() {
+            renderStorageList();
+            showToast('欢迎来到引力盐！');
+        });
+    </script>
+</body>
+</html>
