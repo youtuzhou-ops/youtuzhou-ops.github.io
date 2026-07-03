@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>引力盐 - 找搭子做手工</title>
+<style>
+  :root {
+    --primary: #FF7A5C;
+    --primary-light: #FFE8E0;
+    --primary-soft: #FFF0EB;
+    --primary-dark: #E55D3E;
+    --bg: #FFF9F5;
+    --surface: #FFFFFF;
+    --surface-2: #FFF5F0;
+    --text: #2D2420;
+    --text-2: #6B5D56;
+    --text-3: #B8ADA7;
+    --border: #F0E6E0;
+    --success: #5DC989;
+    --danger: #FF6B6B;
+    --warning: #FFB347;
+    --info: #6BC5F5;
+    --shadow: 0 4px 16px rgba(45,36,32,0.06);
+    --shadow-sm: 0 2px 8px rgba(45,36,32,0.04);
+    --shadow-lg: 0 8px 32px rgba(45,36,32,0.1);
+    --radius: 24px;
+    --radius-md: 18px;
+    --radius-sm: 14px;
+    --radius-xs: 10px;
+    --radius-pill: 999px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background:#F0E8E2; color:var(--text); overflow:hidden; }
+  #app-frame { width:100%; max-width:430px; height:100vh; margin:0 auto; background:var(--bg); position:relative; overflow:hidden; display:flex; flex-direction:column; }
+  .page { flex:1; overflow-y:auto; overflow-x:hidden; display:none; position:relative; scrollbar-width:none; }
+  .page::-webkit-scrollbar { display:none; }
+  .page.active { display:block; animation:pageIn 0.4s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes pageIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ===== Header ===== */
+  .header { padding:20px 20px 10px; background:var(--bg); position:sticky; top:0; z-index:10; }
+  .header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .header-title { font-size:24px; font-weight:800; letter-spacing:-0.8px; }
+  .search-box { background:var(--surface); border-radius:var(--radius-pill); padding:12px 18px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow-sm); border:none; }
+  .search-box input { border:none; background:transparent; flex:1; font-size:14px; outline:none; color:var(--text); }
+  .search-box input::placeholder { color:var(--text-3); }
+
+  /* ===== Community Card ===== */
+  .comm-card { margin:0 16px 18px; background:linear-gradient(135deg, #FFF0EB 0%, #FFE8E0 50%, #FFF5F0 100%); border-radius:var(--radius); padding:20px; position:relative; overflow:hidden; box-shadow:var(--shadow-sm); }
+  .comm-card::before { content:''; position:absolute; top:-40px; right:-40px; width:120px; height:120px; background:rgba(255,122,92,0.08); border-radius:50%; }
+  .comm-card::after { content:''; position:absolute; bottom:-20px; left:-20px; width:80px; height:80px; background:rgba(255,122,92,0.05); border-radius:50%; }
+  .comm-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; position:relative; z-index:1; }
+  .comm-name { font-size:18px; font-weight:800; }
+  .comm-meta { font-size:12px; color:var(--text-2); margin-top:4px; }
+  .comm-badge { background:var(--text); color:#fff; font-size:11px; padding:5px 12px; border-radius:var(--radius-pill); font-weight:600; }
+  .comm-actions { display:flex; gap:20px; margin-top:14px; position:relative; z-index:1; }
+  .comm-action { display:flex; flex-direction:column; align-items:center; gap:5px; font-size:11px; color:var(--text-2); cursor:pointer; transition:transform 0.15s; }
+  .comm-action:active { transform:scale(0.9); }
+  .comm-action .icon-wrap { width:48px; height:48px; background:var(--surface); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:var(--shadow-sm); transition:all 0.2s; }
+  .comm-action:active .icon-wrap { box-shadow:var(--shadow); }
+
+  /* ===== Filter Chips ===== */
+  .filter-bar { display:flex; gap:10px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; }
+  .filter-bar::-webkit-scrollbar { display:none; }
+  .chip { padding:8px 16px; border-radius:var(--radius-pill); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer; transition:all 0.25s; background:var(--surface); color:var(--text-2); border:none; box-shadow:var(--shadow-sm); }
+  .chip.active { background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(255,122,92,0.3); transform:translateY(-1px); }
+  .chip:active { transform:scale(0.93); }
+
+  /* ===== Grid Cards ===== */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:0 16px 24px; }
+  .card { background:var(--surface); border-radius:var(--radius-md); overflow:hidden; box-shadow:var(--shadow-sm); transition:all 0.3s; cursor:pointer; position:relative; border:none; }
+  .card:hover, .card:active { box-shadow:var(--shadow); transform:translateY(-2px); }
+  .card-img-wrap { aspect-ratio:1; background:linear-gradient(135deg, var(--primary-soft), var(--bg)); position:relative; display:flex; align-items:center; justify-content:center; }
+  .emoji-placeholder { display:flex; align-items:center; justify-content:center; font-size:56px; width:100%; height:100%; }
+  .success-badge { position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.95); backdrop-filter:blur(6px); padding:4px 10px; border-radius:var(--radius-pill); font-size:11px; font-weight:700; color:var(--success); display:flex; align-items:center; gap:4px; box-shadow:var(--shadow-sm); }
+  .card-body { padding:12px 14px 14px; }
+  .card-title { font-size:14px; font-weight:700; line-height:1.35; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .card-author { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-2); margin-bottom:8px; }
+  .card-author .avatar { width:18px; height:18px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--primary-dark); }
+  .card-stats { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-3); }
+  .card-stats span { display:flex; align-items:center; gap:3px; }
+  .card-actions { display:flex; gap:8px; margin-top:10px; }
+  .btn-sm { flex:1; padding:8px 0; border-radius:var(--radius-pill); font-size:12px; font-weight:700; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .btn-sm:active { transform:scale(0.92); }
+  .btn-sm.outline { background:var(--surface-2); color:var(--text-2); }
+  .btn-sm.primary { background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(255,122,92,0.25); }
+  .btn-sm.success { background:var(--success); color:#fff; box-shadow:0 4px 12px rgba(93,201,137,0.25); }
+
+  /* ===== List Style for Blueprint ===== */
+  .list { padding:0 16px 24px; }
+  .list-item { background:var(--surface); border-radius:var(--radius-md); padding:16px; margin-bottom:12px; box-shadow:var(--shadow-sm); display:flex; gap:14px; cursor:pointer; transition:all 0.2s; border:none; }
+  .list-item:hover, .list-item:active { box-shadow:var(--shadow); transform:translateY(-1px); }
+  .list-thumb { width:60px; height:60px; border-radius:var(--radius-sm); background:linear-gradient(135deg, var(--primary-soft), var(--bg)); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0; }
+  .list-info { flex:1; min-width:0; }
+  .list-title { font-size:15px; font-weight:700; margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list-meta { font-size:12px; color:var(--text-2); margin-bottom:8px; }
+  .list-tags { display:flex; gap:6px; flex-wrap:wrap; }
+  .tag { padding:4px 10px; border-radius:var(--radius-pill); font-size:11px; font-weight:600; }
+  .tag.free { background:#E8F8EF; color:#2DAF6A; }
+  .tag.paid { background:#FFF5E0; color:#E8940C; }
+  .tag.diff-easy { background:#E0F0FF; color:#2A7FD4; }
+  .tag.diff-hard { background:#FFE8E8; color:#E84D4D; }
+  .tag.hot { background:var(--primary-light); color:var(--primary-dark); }
+  .tag.diamond { background:#E8E8FF; color:#5A4FCF; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav { display:flex; justify-content:space-around; align-items:center; padding:8px 0 18px; background:var(--surface); border-top:1px solid var(--border); position:relative; z-index:20; border-radius:var(--radius) var(--radius) 0 0; box-shadow:0 -4px 20px rgba(45,36,32,0.05); }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--text-3); cursor:pointer; transition:all 0.2s; padding:4px 14px; border-radius:var(--radius-sm); }
+  .nav-item.active { color:var(--primary); }
+  .nav-item .nav-icon { font-size:22px; line-height:1; transition:transform 0.2s; }
+  .nav-item:active .nav-icon { transform:scale(0.85); }
+  .nav-add { width:54px; height:54px; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; margin-top:-26px; box-shadow:0 6px 20px rgba(255,122,92,0.35); cursor:pointer; transition:all 0.2s; border:3px solid var(--surface); position:relative; }
+  .nav-add::before { content:'+'; font-size:28px; font-weight:300; line-height:1; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+  .nav-add:active { transform:scale(0.88); box-shadow:0 3px 12px rgba(255,122,92,0.25); }
+
+  /* ===== Detail Page ===== */
+  .detail-hero { position:relative; aspect-ratio:4/3; background:linear-gradient(135deg, var(--primary-soft), var(--bg)); display:flex; align-items:center; justify-content:center; }
+  .detail-hero .emoji-placeholder { font-size:100px; }
+  .detail-back { position:absolute; top:16px; left:16px; width:38px; height:38px; background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm); z-index:5; font-size:18px; transition:all 0.2s; }
+  .detail-back:active { transform:scale(0.9); }
+  .detail-body { padding:24px 20px; }
+  .detail-title { font-size:22px; font-weight:800; margin-bottom:10px; }
+  .detail-author-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .detail-author { display:flex; align-items:center; gap:10px; }
+  .detail-author .avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, var(--primary-light), var(--primary-soft)); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:var(--primary-dark); }
+  .detail-author .name { font-size:14px; font-weight:700; }
+  .detail-author .sub { font-size:12px; color:var(--text-3); }
+  .detail-stats { display:flex; gap:18px; margin-bottom:18px; font-size:13px; color:var(--text-2); }
+  .detail-stats span { display:flex; align-items:center; gap:4px; }
+
+  /* ===== Progress ===== */
+  .progress-box { background:var(--surface); border-radius:var(--radius-md); padding:18px; margin-bottom:18px; box-shadow:var(--shadow-sm); }
+  .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .progress-label { font-size:13px; font-weight:700; color:var(--text-2); }
+  .progress-value { font-size:20px; font-weight:800; color:var(--success); }
+  .progress-bar { height:10px; background:var(--border); border-radius:var(--radius-pill); overflow:hidden; margin-bottom:10px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg, var(--success), #7EE0A0); border-radius:var(--radius-pill); transition:width 0.8s ease; }
+  .progress-sub { font-size:12px; color:var(--text-3); display:flex; gap:14px; }
+
+  /* ===== Info Grid ===== */
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  .info-cell { background:var(--surface); border-radius:var(--radius-sm); padding:14px; box-shadow:var(--shadow-sm); }
+  .info-cell .label { font-size:11px; color:var(--text-3); margin-bottom:5px; font-weight:600; }
+  .info-cell .value { font-size:14px; font-weight:700; }
+
+  /* ===== People ===== */
+  .people-section { margin-bottom:18px; }
+  .people-header { display:flex; justify-content:space-between; align-items:center; padding:0 0 12px; }
+  .people-header .title { font-size:15px; font-weight:800; }
+  .people-header .count { font-size:12px; color:var(--text-3); background:var(--surface-2); padding:4px 12px; border-radius:var(--radius-pill); font-weight:600; }
+  .people-list { display:flex; flex-direction:column; gap:10px; }
+  .people-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border-radius:var(--radius-sm); padding:12px 14px; box-shadow:var(--shadow-sm); transition:all 0.2s; }
+  .people-item:active { transform:scale(0.98); }
+  .people-item-left { display:flex; align-items:center; gap:10px; }
+  .people-item-left .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, var(--primary-light), var(--primary-soft)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--primary-dark); }
+  .people-item-left .name { font-size:14px; font-weight:700; }
+  .people-item-left .sub { font-size:11px; color:var(--text-3); }
+  .btn-xs { padding:6px 14px; border-radius:var(--radius-pill); font-size:12px; font-weight:700; border:none; cursor:pointer; transition:all 0.2s; }
+  .btn-xs:active { transform:scale(0.92); }
+  .btn-xs.primary { background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(255,122,92,0.25); }
+  .btn-xs.outline { background:var(--surface-2); color:var(--text-2); }
+
+  /* ===== Record ===== */
+  .record-item { display:flex; gap:12px; background:var(--surface); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
+  .record-item .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, var(--primary-light), var(--primary-soft)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--primary-dark); flex-shrink:0; }
+  .record-content { flex:1; }
+  .record-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .record-name { font-size:13px; font-weight:700; }
+  .record-badge { font-size:11px; padding:3px 8px; border-radius:var(--radius-pill); font-weight:700; }
+  .record-badge.success { background:#E8F8EF; color:#2DAF6A; }
+  .record-badge.fail { background:#FFE8E8; color:#E84D4D; }
+  .record-text { font-size:12px; color:var(--text-2); line-height:1.6; }
+  .record-time { font-size:11px; color:var(--text-3); margin-top:5px; }
+
+  /* ===== Detail Footer ===== */
+  .detail-footer { position:sticky; bottom:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-top:1px solid var(--border); padding:12px 18px 18px; display:flex; gap:12px; z-index:10; }
+  .btn { flex:1; padding:13px 0; border-radius:var(--radius-pill); font-size:15px; font-weight:700; border:none; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .btn:active { transform:scale(0.95); }
+  .btn.primary { background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:#fff; box-shadow:0 6px 20px rgba(255,122,92,0.3); }
+  .btn.outline { background:var(--surface-2); color:var(--text-2); }
+  .btn.success { background:var(--success); color:#fff; box-shadow:0 6px 20px rgba(93,201,137,0.25); }
+
+  /* ===== Modals ===== */
+  .modal-overlay { position:fixed; inset:0; background:rgba(45,36,32,0.4); backdrop-filter:blur(4px); z-index:100; display:none; align-items:flex-end; justify-content:center; }
+  .modal-overlay.active { display:flex; animation:fadeIn 0.2s; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .modal { background:var(--surface); width:100%; max-width:430px; border-radius:var(--radius) var(--radius) 0 0; padding:24px; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); max-height:85vh; overflow-y:auto; }
+  .modal-overlay.active .modal { transform:translateY(0); }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-title { font-size:18px; font-weight:800; }
+  .modal-close { width:36px; height:36px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; border:none; transition:all 0.2s; }
+  .modal-close:active { transform:scale(0.9); background:var(--border); }
+  .modal-body { margin-bottom:24px; }
+
+  /* ===== Form Elements ===== */
+  .form-group { margin-bottom:18px; }
+  .form-label { font-size:13px; font-weight:700; color:var(--text-2); margin-bottom:8px; display:block; }
+  .form-input, .form-textarea { width:100%; padding:14px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--surface); font-size:14px; outline:none; transition:all 0.2s; font-family:inherit; }
+  .form-input:focus, .form-textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
+  .form-textarea { min-height:90px; resize:none; }
+  .upload-box { width:100%; aspect-ratio:16/10; border:2px dashed var(--border); border-radius:var(--radius-md); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--text-3); cursor:pointer; background:var(--surface-2); transition:all 0.2s; }
+  .upload-box:hover, .upload-box:active { border-color:var(--primary); background:var(--primary-soft); }
+  .upload-box .upload-icon { font-size:36px; }
+  .upload-box .upload-text { font-size:13px; font-weight:600; }
+
+  /* ===== Result Toggle ===== */
+  .result-toggle { display:flex; gap:12px; }
+  .result-option { flex:1; padding:16px; border-radius:var(--radius-md); border:2px solid var(--border); text-align:center; cursor:pointer; transition:all 0.25s; background:var(--surface); }
+  .result-option:active { transform:scale(0.96); }
+  .result-option.selected { border-color:var(--success); background:#F0FFF5; }
+  .result-option.selected.fail { border-color:var(--danger); background:#FFF5F5; }
+  .result-option .icon { font-size:28px; margin-bottom:6px; }
+  .result-option .label { font-size:14px; font-weight:700; }
+
+  /* ===== Profile ===== */
+  .profile-header { background:linear-gradient(135deg, var(--surface) 0%, var(--primary-soft) 100%); padding:28px 20px 20px; text-align:center; position:relative; border-radius:0 0 var(--radius) var(--radius); }
+  .profile-avatar { width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--primary-dark)); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:#fff; margin:0 auto 12px; box-shadow:var(--shadow-lg); border:3px solid var(--surface); }
+  .profile-name { font-size:20px; font-weight:800; margin-bottom:3px; }
+  .profile-bio { font-size:13px; color:var(--text-3); margin-bottom:18px; }
+  .profile-stats { display:flex; justify-content:center; gap:36px; }
+  .profile-stat { text-align:center; }
+  .profile-stat .num { font-size:24px; font-weight:800; }
+  .profile-stat .label { font-size:12px; color:var(--text-3); margin-top:3px; font-weight:600; }
+  .profile-tabs { display:flex; border-bottom:1px solid var(--border); background:var(--surface); }
+  .profile-tab { flex:1; text-align:center; padding:14px; font-size:14px; font-weight:700; color:var(--text-3); cursor:pointer; position:relative; transition:color 0.2s; }
+  .profile-tab.active { color:var(--text); }
+  .profile-tab.active::after { content:''; position:absolute; bottom:0; left:30%; right:30%; height:3px; background:var(--primary); border-radius:var(--radius-pill); }
+
+  /* ===== Publish Type Select ===== */
+  .type-grid { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin-bottom:20px; }
+  .type-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+  .type-item .type-circle { width:54px; height:54px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:26px; border:2.5px solid transparent; transition:all 0.25s; }
+  .type-item.active .type-circle { border-color:var(--primary); background:var(--primary-light); box-shadow:0 4px 12px rgba(255,122,92,0.2); }
+  .type-item:active .type-circle { transform:scale(0.9); }
+  .type-item .type-name { font-size:11px; color:var(--text-2); font-weight:600; }
+
+  /* ===== Toast ===== */
+  .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-80px); background:var(--text); color:#fff; padding:12px 24px; border-radius:var(--radius-pill); font-size:14px; font-weight:700; z-index:200; transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); box-shadow:var(--shadow-lg); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* ===== Difficulty Stars ===== */
+  .stars { display:flex; align-items:center; gap:6px; height:28px; }
+  .star { font-size:22px; color:#FFD93D; cursor:pointer; transition:transform 0.15s; line-height:1; display:inline-flex; align-items:center; justify-content:center; height:22px; width:22px; }
+  .star:active { transform:scale(1.3); }
+  .star.empty { color:var(--border); }
+
+  /* ===== Sub Filter ===== */
+  .sub-filter { display:flex; gap:10px; padding:14px 16px; background:var(--bg); overflow-x:auto; scrollbar-width:none; }
+  .sub-filter::-webkit-scrollbar { display:none; }
+
+  /* ===== Timeline ===== */
+  .timeline { padding:0 16px 24px; position:relative; }
+  .timeline::before { content:''; position:absolute; left:27px; top:0; bottom:0; width:2px; background:linear-gradient(180deg, var(--border), var(--primary-light)); border-radius:var(--radius-pill); }
+  .timeline-item { display:flex; gap:14px; margin-bottom:20px; position:relative; }
+  .timeline-dot { width:20px; height:20px; border-radius:50%; background:var(--primary); border:3px solid var(--surface); box-shadow:0 0 0 2px var(--primary-light); flex-shrink:0; margin-top:18px; z-index:1; }
+  .timeline-content { flex:1; }
+  .timeline-date { font-size:12px; font-weight:700; color:var(--text-3); margin-bottom:6px; padding-left:4px; }
+  .timeline-card { background:var(--surface); border-radius:var(--radius-md); padding:14px; box-shadow:var(--shadow-sm); display:flex; gap:12px; cursor:pointer; transition:all 0.2s; }
+  .timeline-card:active { transform:scale(0.98); }
+  .timeline-card .thumb { width:56px; height:56px; border-radius:var(--radius-sm); background:linear-gradient(135deg, var(--primary-soft), var(--bg)); display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0; }
+  .timeline-card .info { flex:1; min-width:0; }
+  .timeline-card .title { font-size:14px; font-weight:700; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .timeline-card .meta { font-size:12px; color:var(--text-2); }
+  .timeline-card .badge { display:inline-block; margin-top:6px; padding:3px 10px; border-radius:var(--radius-pill); font-size:11px; font-weight:600; background:#E8F8EF; color:#2DAF6A; }
+
+  /* ===== Empty ===== */
+  .empty { text-align:center; padding:50px 20px; color:var(--text-3); }
+  .empty-icon { font-size:56px; margin-bottom:14px; }
+
+  /* ===== Publish Header ===== */
+  .pub-header { padding:16px 20px; background:var(--bg); position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; }
+  .pub-header-left { display:flex; align-items:center; gap:12px; }
+  .pub-back { width:36px; height:36px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm); font-size:18px; transition:all 0.2s; }
+  .pub-back:active { transform:scale(0.9); background:var(--border); }
+  .pub-title-text { font-size:18px; font-weight:800; }
+  .pub-submit { color:var(--primary); font-size:15px; font-weight:700; cursor:pointer; padding:6px 14px; border-radius:var(--radius-pill); transition:all 0.2s; }
+  .pub-submit:active { background:var(--primary-light); }
+</style>
+</head>
+<body>
+<div id="app-frame">
+
+  <!-- ========== PAGE: 圈子（作品墙） ========== -->
+  <div class="page active" id="page-home">
+    <div class="header">
+      <div class="header-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:26px;">🧶</span>
+          <span class="header-title">手工造物所</span>
+        </div>
+      </div>
+      <div class="search-box">
+        <span style="font-size:16px;color:var(--text-3);">🔍</span>
+        <input type="text" placeholder="搜索作品、配方、作者" id="home-search">
+      </div>
+    </div>
+
+    <div class="comm-card">
+      <div class="comm-card-top">
+        <div>
+          <div class="comm-name">手工造物所</div>
+          <div class="comm-meta">1,247 成员 · 342 在线 · 你处于「进阶期」</div>
+        </div>
+        <div class="comm-badge">已加入</div>
+      </div>
+      <div class="comm-actions">
+        <div class="comm-action" onclick="goPage('home')">
+          <div class="icon-wrap">📷</div>
+          <span>作品墙</span>
+        </div>
+        <div class="comm-action" onclick="goPage('tutorial')">
+          <div class="icon-wrap">📚</div>
+          <span>教程</span>
+        </div>
+        <div class="comm-action" onclick="goPage('material')">
+          <div class="icon-wrap">🛒</div>
+          <span>材料库</span>
+        </div>
+        <div class="comm-action" onclick="goPage('price')">
+          <div class="icon-wrap">💰</div>
+          <span>求估价</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar" id="home-filters">
+      <div class="chip active" data-filter="all">全部</div>
+      <div class="chip" data-filter="bean">🟡 拼豆</div>
+      <div class="chip" data-filter="crochet">🧶 钩织</div>
+      <div class="chip" data-filter="resin">💧 滴胶</div>
+      <div class="chip" data-filter="bake">🍰 烘焙</div>
+      <div class="chip" data-filter="coffee">☕ 咖啡</div>
+    </div>
+
+    <div class="grid-2" id="home-grid"></div>
+  </div>
+
+  <!-- ========== PAGE: 图纸库 ========== -->
+  <div class="page" id="page-blueprint">
+    <div class="header">
+      <div class="header-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:26px;">📚</span>
+          <span class="header-title">图纸库</span>
+        </div>
+      </div>
+      <div class="search-box">
+        <span style="font-size:16px;color:var(--text-3);">🔍</span>
+        <input type="text" placeholder="搜索图纸、教程、配方" id="bp-search">
+      </div>
+    </div>
+    <div class="filter-bar" id="bp-filters">
+      <div class="chip active" data-filter="all">全部</div>
+      <div class="chip" data-filter="bean">拼豆</div>
+      <div class="chip" data-filter="crochet">钩织</div>
+      <div class="chip" data-filter="bake">烘焙</div>
+      <div class="chip" data-filter="coffee">咖啡</div>
+    </div>
+    <div class="list" id="bp-list"></div>
+  </div>
+
+  <!-- ========== PAGE: 作品详情 ========== -->
+  <div class="page" id="page-detail">
+    <div class="detail-hero" id="detail-hero">
+      <div class="detail-back" onclick="goBack()">←</div>
+      <div class="emoji-placeholder" id="detail-emoji">🟡</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-title" id="detail-title">皮卡丘拼豆挂件</div>
+      <div class="detail-author-row">
+        <div class="detail-author">
+          <div class="avatar">小</div>
+          <div>
+            <div class="name">手作小丸子</div>
+            <div class="sub">520 发布</div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-stats">
+        <span>👁 <span id="detail-views">1240</span></span>
+        <span>❤️ <span id="detail-likes">128</span></span>
+        <span>💬 <span id="detail-comments">45</span></span>
+        <span>✅ <span id="detail-done">156</span>人已做</span>
+      </div>
+
+      <div class="progress-box">
+        <div class="progress-header">
+          <span class="progress-label">📊 跟做成功率</span>
+          <span class="progress-value" id="detail-rate">91%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="detail-progress" style="width:91%"></div></div>
+        <div class="progress-sub">
+          <span style="color:var(--success);">✅ <span id="detail-success">42</span>人成功</span>
+          <span style="color:var(--danger);">❌ <span id="detail-fail">4</span>人翻车</span>
+          <span>共 <span id="detail-total">46</span>人尝试</span>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-cell"><div class="label">📐 规格</div><div class="value" id="detail-spec">5cm拼豆</div></div>
+        <div class="info-cell"><div class="label">🎨 材料</div><div class="value" id="detail-material">拼豆板、烫纸</div></div>
+        <div class="info-cell"><div class="label">⏱ 耗时</div><div class="value" id="detail-time">2小时</div></div>
+        <div class="info-cell"><div class="label">⭐ 难度</div><div class="value" id="detail-diff">新手友好</div></div>
+      </div>
+
+      <div class="people-section">
+        <div class="people-header">
+          <span class="title">⭐ 想做的人 (<span id="want-count">2</span>人)</span>
+          <span class="count">点右边组搭子一起开工 →</span>
+        </div>
+        <div class="people-list" id="want-list">
+          <div class="people-item">
+            <div class="people-item-left">
+              <div class="avatar">小</div>
+              <div><div class="name">小鹿</div><div class="sub">拼豆新手</div></div>
+            </div>
+            <button class="btn-xs outline" onclick="openBuddies()">组搭子</button>
+          </div>
+          <div class="people-item">
+            <div class="people-item-left">
+              <div class="avatar">S</div>
+              <div><div class="name">Summer</div><div class="sub">想从头开始学</div></div>
+            </div>
+            <button class="btn-xs outline" onclick="openBuddies()">组搭子</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="people-section">
+        <div class="people-header">
+          <span class="title">📋 跟做记录 (<span id="record-count">45</span>人)</span>
+        </div>
+        <div class="people-list" id="record-list">
+          <div class="record-item">
+            <div class="avatar">小</div>
+            <div class="record-content">
+              <div class="record-top">
+                <span class="record-name">小兔</span>
+                <span class="record-badge success">成功</span>
+              </div>
+              <div class="record-text">颜色匹配的非常好，做出来很精致！</div>
+              <div class="record-time">2天前</div>
+            </div>
+          </div>
+          <div class="record-item">
+            <div class="avatar">喵</div>
+            <div class="record-content">
+              <div class="record-top">
+                <span class="record-name">喵喵</span>
+                <span class="record-badge fail">翻车</span>
+              </div>
+              <div class="record-text">烫的时候温度太高了，豆子变形了，建议低温慢烫</div>
+              <div class="record-time">5天前</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:90px;"></div>
+    <div class="detail-footer">
+      <button class="btn outline" id="btn-want" onclick="toggleWant()">⭐ 想做</button>
+      <button class="btn primary" onclick="openSubmitModal()">✅ 提交跟做</button>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: 发布新作品 ========== -->
+  <div class="page" id="page-publish">
+    <div class="pub-header">
+      <div class="pub-header-left">
+        <div class="pub-back" onclick="goBack()">←</div>
+        <div class="pub-title-text">发布新作品</div>
+      </div>
+      <div class="pub-submit" onclick="submitPublish()">发布</div>
+    </div>
+    <div style="padding:0 16px 24px;">
+      <div class="form-group">
+        <label class="form-label">选择作品类型</label>
+        <div class="type-grid">
+          <div class="type-item active" data-type="bean" onclick="selectType(this)">
+            <div class="type-circle">🟡</div>
+            <span class="type-name">拼豆</span>
+          </div>
+          <div class="type-item" data-type="crochet" onclick="selectType(this)">
+            <div class="type-circle">🧶</div>
+            <span class="type-name">钩织</span>
+          </div>
+          <div class="type-item" data-type="resin" onclick="selectType(this)">
+            <div class="type-circle">💧</div>
+            <span class="type-name">滴胶</span>
+          </div>
+          <div class="type-item" data-type="bake" onclick="selectType(this)">
+            <div class="type-circle">🍰</div>
+            <span class="type-name">烘焙</span>
+          </div>
+          <div class="type-item" data-type="coffee" onclick="selectType(this)">
+            <div class="type-circle">☕</div>
+            <span class="type-name">咖啡</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">上传作品照片</label>
+        <div class="upload-box" onclick="triggerUpload()">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">点击上传照片</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">作品名称</label>
+        <input type="text" class="form-input" placeholder="给你的作品起个名字" id="pub-title">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">作品说明</label>
+        <textarea class="form-textarea" placeholder="分享你的制作心得、遇到的问题..." id="pub-desc"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">材料</label>
+        <input type="text" class="form-input" placeholder="如：5mm融合豆、拼豆板、烫纸" id="pub-material">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">耗时</label>
+        <input type="text" class="form-input" placeholder="如：2.5小时" id="pub-time">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">难度</label>
+        <div class="stars" id="diff-stars">
+          <span class="star" onclick="setDiff(1)">★</span>
+          <span class="star" onclick="setDiff(2)">★</span>
+          <span class="star" onclick="setDiff(3)">★</span>
+          <span class="star empty" onclick="setDiff(4)">★</span>
+          <span class="star empty" onclick="setDiff(5)">★</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">灵感来源（可选）</label>
+        <input type="text" class="form-input" placeholder="如：宝可梦官方图鉴" id="pub-inspire">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">教程/配方链接（可选）</label>
+        <input type="text" class="form-input" placeholder="粘贴链接" id="pub-link">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">关联作品模板（记录失败经验）</label>
+        <div style="padding:14px; background:var(--surface-2); border-radius:var(--radius-sm); border:1.5px solid var(--border); font-size:13px; color:var(--text-2); cursor:pointer; font-weight:600;" onclick="showToast('功能开发中')">
+          📎 从图纸库选择模板关联...
+        </div>
+      </div>
+    </div>
+    <div style="height:40px;"></div>
+  </div>
+
+  <!-- ========== PAGE: 个人主页 ========== -->
+  <div class="page" id="page-profile">
+    <div class="profile-header">
+      <div class="profile-avatar">手</div>
+      <div class="profile-name">手作小丸子</div>
+      <div class="profile-bio">UID: 2048 · 专注手工100天</div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="num">23</div><div class="label">作品总数</div></div>
+        <div class="profile-stat"><div class="num">3</div><div class="label">手作模板</div></div>
+        <div class="profile-stat"><div class="num">86h</div><div class="label">总耗时</div></div>
+      </div>
+    </div>
+    <div class="profile-tabs">
+      <div class="profile-tab active" onclick="switchProfileTab(this, 'timeline')">时间轴</div>
+      <div class="profile-tab" onclick="switchProfileTab(this, 'grid')">分类墙</div>
+    </div>
+    <div class="sub-filter" id="profile-filters">
+      <div class="chip active" data-filter="all">全部</div>
+      <div class="chip" data-filter="bean">🟡 拼豆</div>
+      <div class="chip" data-filter="crochet">🧶 钩织</div>
+      <div class="chip" data-filter="resin">💧 滴胶</div>
+      <div class="chip" data-filter="bake">🍰 烘焙</div>
+    </div>
+    <div id="profile-grid"></div>
+  </div>
+
+  <!-- ========== MODALS ========== -->
+
+  <!-- Submit Follow Modal -->
+  <div class="modal-overlay" id="modal-submit" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">✅ 提交跟做</span>
+        <button class="modal-close" onclick="closeModalById('modal-submit')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">上传你的成品照片</label>
+          <div class="upload-box" onclick="triggerUpload()">
+            <div class="upload-icon">📷</div>
+            <div class="upload-text">点击上传照片</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">跟做结果</label>
+          <div class="result-toggle">
+            <div class="result-option" id="res-success" onclick="selectResult('success')">
+              <div class="icon">✅</div>
+              <div class="label">成功</div>
+            </div>
+            <div class="result-option fail" id="res-fail" onclick="selectResult('fail')">
+              <div class="icon">❌</div>
+              <div class="label">翻车</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">跟做心得（可选）</label>
+          <textarea class="form-textarea" placeholder="分享你的跟做经验、遇到的问题、改进建议..." id="follow-note"></textarea>
+        </div>
+      </div>
+      <button class="btn primary" style="width:100%;" onclick="submitFollow()">提交跟做</button>
+    </div>
+  </div>
+
+  <!-- Buddies Modal -->
+  <div class="modal-overlay" id="modal-buddies" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">🤝 组搭子</span>
+        <button class="modal-close" onclick="closeModalById('modal-buddies')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="people-item" style="margin-bottom:10px;">
+          <div class="people-item-left">
+            <div class="avatar" style="background:var(--primary);color:#fff;">小</div>
+            <div><div class="name">小鹿</div><div class="sub">拼豆新手 · 想做「皮卡丘拼豆挂件」</div></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">邀约留言</label>
+          <textarea class="form-textarea" placeholder="比如：这周末有空一起做吗？我可以准备材料~" id="buddy-msg"></textarea>
+        </div>
+      </div>
+      <button class="btn primary" style="width:100%;" onclick="sendBuddy()">发送邀约</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ========== BOTTOM NAV ========== -->
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="nav-item active" data-page="home" onclick="switchTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span>圈子</span>
+    </div>
+    <div class="nav-item" data-page="blueprint" onclick="switchTab('blueprint')">
+      <span class="nav-icon">📚</span>
+      <span>图纸库</span>
+    </div>
+    <div class="nav-add" onclick="switchTab('publish')"></div>
+    <div class="nav-item" data-page="messages" onclick="switchTab('messages')">
+      <span class="nav-icon">💬</span>
+      <span>消息</span>
+    </div>
+    <div class="nav-item" data-page="profile" onclick="switchTab('profile')">
+      <span class="nav-icon">👤</span>
+      <span>我的</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================= DATA =================
+const works = [
+  { id:1, type:'bean', title:'皮卡丘拼豆挂件', author:'手作小丸子', emoji:'🟡', rate:91, views:1240, likes:128, comments:45, want:156 },
+  { id:2, type:'crochet', title:'郁金香钩织挂件', author:'织女阿花', emoji:'🧶', rate:74, views:3420, likes:892, comments:134, want:90 },
+  { id:3, type:'resin', title:'海洋风滴胶钥匙扣', author:'滴胶小能手', emoji:'💧', rate:62, views:890, likes:234, comments:56, want:45 },
+  { id:4, type:'bake', title:'戚风蛋糕（6寸）', author:'烘焙小白', emoji:'🍰', rate:84, views:2100, likes:567, comments:89, want:120 },
+  { id:5, type:'bean', title:'星之卡比挂件', author:'豆豆侠', emoji:'🟣', rate:88, views:980, likes:310, comments:67, want:78 },
+  { id:6, type:'coffee', title:'手冲咖啡三段式注水', author:'咖啡学徒', emoji:'☕', rate:95, views:1500, likes:420, comments:55, want:200 },
+];
+
+const blueprints = [
+  { id:1, type:'bean', title:'初音未来Q版·平面图纸', spec:'15x15cm · 5色', diff:'新手友好', price:'free', hot:true, downloads:'1.2k' },
+  { id:2, type:'crochet', title:'皮卡丘立体·进阶图纸', spec:'8x8x10cm · 8色 · 立体', diff:'进阶', price:'paid', priceVal:'¥3', downloads:'856' },
+  { id:3, type:'bake', title:'戚风蛋糕（6寸）配方', spec:'成功率 84% · 342人复刻', diff:'新手友好', price:'free', diamond:true, downloads:'2.1k' },
+  { id:4, type:'coffee', title:'手冲咖啡三段式注水教程', spec:'8分钟 · 新手友好 · 256人复刻', diff:'新手友好', price:'free', hot:true, downloads:'890' },
+  { id:5, type:'bean', title:'宝可梦系列·皮卡丘平面', spec:'10x10cm · 4色', diff:'新手友好', price:'free', diamond:true, downloads:'3.4k' },
+  { id:6, type:'crochet', title:'小雏菊杯垫·新手图解', spec:'直径12cm · 2色', diff:'新手友好', price:'free', hot:true, downloads:'1.5k' },
+];
+
+const profileWorks = [
+  { id:1, type:'bean', title:'皮卡丘拼豆挂件', emoji:'🟡', rate:91, likes:128, comments:45, want:156, date:'2026-06-28' },
+  { id:2, type:'bake', title:'戚风蛋糕（6寸）', emoji:'🍰', rate:84, likes:567, comments:89, want:120, date:'2026-06-20' },
+  { id:3, type:'crochet', title:'郁金香挂件', emoji:'🧶', rate:74, likes:92, comments:23, want:34, date:'2026-06-10' },
+  { id:4, type:'bean', title:'星之卡比', emoji:'🟣', rate:88, likes:210, comments:56, want:89, date:'2026-05-28' },
+];
+
+// ================= STATE =================
+let currentPage = 'home';
+let currentFilter = 'all';
+let currentBpFilter = 'all';
+let currentProfileFilter = 'all';
+let currentProfileTab = 'timeline';
+let currentDetailId = null;
+let selectedResult = null;
+let currentDiff = 3;
+let wantState = {};
+let doneState = {};
+
+// ================= INIT =================
+function init() {
+  renderHome();
+  renderBlueprint();
+  renderProfile();
+  setupFilters();
+}
+
+// ================= RENDER =================
+function renderHome() {
+  const grid = document.getElementById('home-grid');
+  const filtered = currentFilter === 'all' ? works : works.filter(w => w.type === currentFilter);
+  grid.innerHTML = filtered.map(w => {
+    const isWant = wantState[w.id];
+    const isDone = doneState[w.id];
+    return `
+    <div class="card" onclick="openDetail(${w.id})">
+      <div class="card-img-wrap">
+        <div class="emoji-placeholder">${w.emoji}</div>
+        <div class="success-badge">✅ ${w.rate}% 成功率</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${w.title}</div>
+        <div class="card-author">
+          <div class="avatar">${w.author[0]}</div>
+          <span>${w.author}</span>
+        </div>
+        <div class="card-stats">
+          <span>❤️ ${w.likes}</span>
+          <span>💬 ${w.comments}</span>
+          <span>✅ ${w.want}人想做</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm ${isWant ? 'primary' : 'outline'}" onclick="event.stopPropagation();toggleWantHome(${w.id})">
+            ${isWant ? '⭐ 已想做' : '⭐ 想做'}
+          </button>
+          <button class="btn-sm ${isDone ? 'success' : 'outline'}" onclick="event.stopPropagation();toggleDoneHome(${w.id})">
+            ${isDone ? '✅ 已做' : '✅ 已做'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function renderBlueprint() {
+  const list = document.getElementById('bp-list');
+  const filtered = currentBpFilter === 'all' ? blueprints : blueprints.filter(b => b.type === currentBpFilter);
+  list.innerHTML = filtered.map(b => `
+    <div class="list-item" onclick="showToast('已查看图纸详情')">
+      <div class="list-thumb">${typeEmoji(b.type)}</div>
+      <div class="list-info">
+        <div class="list-title">${b.title}</div>
+        <div class="list-meta">${b.spec}</div>
+        <div class="list-tags">
+          ${b.price === 'free' ? '<span class="tag free">免费</span>' : `<span class="tag paid">${b.priceVal}</span>`}
+          <span class="tag ${b.diff === '新手友好' ? 'diff-easy' : 'diff-hard'}">${b.diff}</span>
+          ${b.hot ? '<span class="tag hot">🔥 热门</span>' : ''}
+          ${b.diamond ? '<span class="tag diamond">💎 钻石认证</span>' : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderProfile() {
+  const container = document.getElementById('profile-grid');
+  const filtered = currentProfileFilter === 'all' ? profileWorks : profileWorks.filter(w => w.type === currentProfileFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>暂无该分类作品</div></div>';
+    return;
+  }
+
+  if (currentProfileTab === 'timeline') {
+    // 时间轴视图
+    const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+    container.className = 'timeline';
+    container.innerHTML = sorted.map(w => {
+      const d = new Date(w.date);
+      const dateStr = `${d.getMonth() + 1}月${d.getDate()}日`;
+      return `
+      <div class="timeline-item" onclick="openDetail(${w.id})">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${dateStr}</div>
+          <div class="timeline-card">
+            <div class="thumb">${w.emoji}</div>
+            <div class="info">
+              <div class="title">${w.title}</div>
+              <div class="meta">❤️ ${w.likes} · 💬 ${w.comments} · ✅ ${w.want}人想做</div>
+              <span class="badge">${w.rate}% 成功率</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `}).join('');
+  } else {
+    // 分类墙视图
+    container.className = 'grid-2';
+    container.innerHTML = filtered.map(w => `
+      <div class="card" onclick="openDetail(${w.id})">
+        <div class="card-img-wrap">
+          <div class="emoji-placeholder">${w.emoji}</div>
+          <div class="success-badge">✅ ${w.rate}% 成功率</div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${w.title}</div>
+          <div class="card-stats">
+            <span>❤️ ${w.likes}</span>
+            <span>💬 ${w.comments}</span>
+            <span>✅ ${w.want}人想做</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function typeEmoji(t) {
+  const map = { bean:'🟡', crochet:'🧶', resin:'💧', bake:'🍰', coffee:'☕' };
+  return map[t] || '📄';
+}
+
+// ================= FILTERS =================
+function setupFilters() {
+  document.querySelectorAll('#home-filters .chip').forEach(c => {
+    c.onclick = () => { setFilter('home', c); };
+  });
+  document.querySelectorAll('#bp-filters .chip').forEach(c => {
+    c.onclick = () => { setFilter('bp', c); };
+  });
+  document.querySelectorAll('#profile-filters .chip').forEach(c => {
+    c.onclick = () => { setFilter('profile', c); };
+  });
+}
+
+function setFilter(scope, el) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (scope === 'home') { currentFilter = el.dataset.filter; renderHome(); }
+  if (scope === 'bp') { currentBpFilter = el.dataset.filter; renderBlueprint(); }
+  if (scope === 'profile') { currentProfileFilter = el.dataset.filter; renderProfile(); }
+}
+
+// ================= NAVIGATION =================
+function switchTab(page) {
+  if (page === 'messages') { showToast('消息页面开发中'); return; }
+  if (page === 'tutorial') { showToast('教程页面开发中'); return; }
+  if (page === 'material') { showToast('材料库开发中'); return; }
+  if (page === 'price') { showToast('求估价开发中'); return; }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`.nav-item[data-page="${page}"]`).forEach(n => n.classList.add('active'));
+
+  const nav = document.getElementById('bottom-nav');
+  if (page === 'publish' || page === 'detail') {
+    nav.style.display = 'none';
+  } else {
+    nav.style.display = 'flex';
+  }
+  currentPage = page;
+}
+
+function goPage(page) {
+  switchTab(page);
+}
+
+function goBack() {
+  if (currentPage === 'publish') {
+    // 返回上一个非发布页面
+    switchTab('home');
+  } else if (currentPage === 'detail') {
+    switchTab('home');
+  } else {
+    switchTab('home');
+  }
+}
+
+function openDetail(id) {
+  const w = works.find(x => x.id === id) || profileWorks.find(x => x.id === id);
+  if (!w) return;
+  currentDetailId = id;
+  document.getElementById('detail-emoji').textContent = w.emoji;
+  document.getElementById('detail-title').textContent = w.title;
+  document.getElementById('detail-views').textContent = w.views || 999;
+  document.getElementById('detail-likes').textContent = w.likes;
+  document.getElementById('detail-comments').textContent = w.comments;
+  document.getElementById('detail-done').textContent = w.want;
+  document.getElementById('detail-rate').textContent = w.rate + '%';
+  document.getElementById('detail-progress').style.width = w.rate + '%';
+  document.getElementById('detail-success').textContent = Math.floor(w.rate * 0.42);
+  document.getElementById('detail-fail').textContent = Math.floor((100-w.rate) * 0.42);
+  document.getElementById('detail-total').textContent = 46;
+
+  const wantBtn = document.getElementById('btn-want');
+  if (wantState[id]) {
+    wantBtn.innerHTML = '⭐ 已想做';
+    wantBtn.classList.remove('outline');
+    wantBtn.classList.add('primary');
+  } else {
+    wantBtn.innerHTML = '⭐ 想做';
+    wantBtn.classList.remove('primary');
+    wantBtn.classList.add('outline');
+  }
+
+  switchTab('detail');
+}
+
+// ================= INTERACTIONS =================
+function toggleWantHome(id) {
+  wantState[id] = !wantState[id];
+  renderHome();
+  showToast(wantState[id] ? '已标记想做，可以在组搭子找到同好' : '已取消想做');
+}
+
+function toggleDoneHome(id) {
+  doneState[id] = !doneState[id];
+  renderHome();
+  showToast(doneState[id] ? '太棒了！已标记已做 🎉' : '已取消已做标记');
+}
+
+function toggleWant() {
+  if (!currentDetailId) return;
+  wantState[currentDetailId] = !wantState[currentDetailId];
+  const btn = document.getElementById('btn-want');
+  if (wantState[currentDetailId]) {
+    btn.innerHTML = '⭐ 已想做';
+    btn.classList.remove('outline');
+    btn.classList.add('primary');
+  } else {
+    btn.innerHTML = '⭐ 想做';
+    btn.classList.remove('primary');
+    btn.classList.add('outline');
+  }
+  showToast(wantState[currentDetailId] ? '已标记想做！' : '已取消想做');
+}
+
+function openSubmitModal() {
+  document.getElementById('modal-submit').classList.add('active');
+  selectedResult = null;
+  document.querySelectorAll('.result-option').forEach(r => r.classList.remove('selected'));
+}
+
+function openBuddies() {
+  document.getElementById('modal-buddies').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('active');
+  }
+}
+
+function closeModalById(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function selectResult(type) {
+  selectedResult = type;
+  document.getElementById('res-success').classList.toggle('selected', type === 'success');
+  document.getElementById('res-fail').classList.toggle('selected', type === 'fail');
+}
+
+function submitFollow() {
+  if (!selectedResult) { showToast('请选择跟做结果'); return; }
+  closeModalById('modal-submit');
+  showToast('跟做提交成功！成功率已更新');
+  setTimeout(() => {
+    const w = works.find(x => x.id === currentDetailId);
+    if (w) { w.rate = Math.min(99, w.rate + 1); openDetail(currentDetailId); }
+  }, 400);
+}
+
+function sendBuddy() {
+  closeModalById('modal-buddies');
+  showToast('邀约已发送！等待对方回应');
+}
+
+// ================= PUBLISH =================
+function selectType(el) {
+  document.querySelectorAll('.type-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setDiff(n) {
+  currentDiff = n;
+  const stars = document.querySelectorAll('#diff-stars .star');
+  stars.forEach((s, i) => s.classList.toggle('empty', i >= n));
+}
+
+function triggerUpload() {
+  showToast('上传功能演示中...');
+}
+
+function submitPublish() {
+  const title = document.getElementById('pub-title').value;
+  if (!title.trim()) { showToast('请填写作品名称'); return; }
+  showToast('作品发布成功！');
+  setTimeout(() => switchTab('home'), 600);
+}
+
+// ================= PROFILE =================
+function switchProfileTab(el, tab) {
+  document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentProfileTab = tab;
+  renderProfile();
+}
+
+// ================= TOAST =================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ================= START =================
+init();
+</script>
+</body>
+</html>
