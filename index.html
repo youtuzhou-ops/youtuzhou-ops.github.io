@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>情绪盲盒拆拆乐</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --warm-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --heal-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-radius: 16px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg-color); color: var(--text-primary); overflow: hidden; }
+
+        #app { width: 100%; height: 100%; position: relative; overflow: hidden; }
+        .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg-color); display: none; }
+        .page.active { display: block; }
+
+        /* ========== 首页 ========== */
+        #homePage { padding-bottom: 24px; }
+        .home-header { padding: 48px 20px 28px; background: var(--primary-gradient); color: white; border-radius: 0 0 32px 32px; }
+        .home-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .home-header p { font-size: 14px; opacity: 0.85; }
+        .home-content { padding: 20px; }
+
+        .diagnosis-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 24px 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+        }
+        .diagnosis-card h3 { font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .diagnosis-card p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+        .diagnosis-btn {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: var(--heal-gradient); color: white;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: var(--transition);
+        }
+        .diagnosis-btn:active { transform: scale(0.97); }
+
+        .history-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            display: flex; align-items: center; gap: 14px;
+        }
+        .history-card .history-icon {
+            width: 52px; height: 52px; border-radius: 14px;
+            background: var(--warm-gradient);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 26px; flex-shrink: 0;
+        }
+        .history-card .history-info { flex: 1; }
+        .history-card .history-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .history-card .history-desc { font-size: 13px; color: var(--text-secondary); }
+
+        /* ========== 诊断流程页 ========== */
+        #diagnosisPage { padding: 20px; }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-top: 20px; }
+        .back-btn {
+            width: 36px; height: 36px; border-radius: 50%; background: #f3f4f6;
+            border: none; font-size: 18px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .page-header h2 { font-size: 20px; }
+
+        .progress-bar { width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; margin-bottom: 32px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary-gradient); border-radius: 2px; transition: width 0.4s ease; }
+
+        .question-card { background: var(--card-bg); border-radius: var(--border-radius); padding: 28px 20px; margin-bottom: 16px; box-shadow: var(--shadow-md); }
+        .question-card .question-num { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
+        .question-card .question-text { font-size: 18px; font-weight: 600; margin-bottom: 24px; line-height: 1.5; }
+        .option-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item {
+            padding: 16px; border-radius: 12px; border: 2px solid #e5e7eb; background: white;
+            font-size: 15px; cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .option-item:active { transform: scale(0.98); }
+        .option-item.selected { border-color: #667eea; background: #eef2ff; color: #667eea; font-weight: 600; }
+        .option-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #d1d5db; display: flex; justify-content: center; align-items: center; font-size: 12px; transition: var(--transition); }
+        .option-item.selected .option-dot { border-color: #667eea; background: #667eea; color: white; }
+
+        .next-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: var(--primary-gradient); color: white;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: var(--transition); margin-top: 8px;
+        }
+        .next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .next-btn:active:not(:disabled) { transform: scale(0.97); }
+
+        /* ========== 诊断结果页 ========== */
+        #resultPage { padding-bottom: 24px; }
+        .result-hero {
+            background: var(--primary-gradient); color: white;
+            padding: 48px 20px 32px; border-radius: 0 0 32px 32px; text-align: center;
+        }
+        .result-hero .result-emoji { font-size: 56px; margin-bottom: 12px; display: inline-block; animation: resultPop 0.6s ease-out; }
+        @keyframes resultPop {
+            0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); }
+        }
+        .result-hero .result-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .result-hero .result-subtitle { font-size: 14px; opacity: 0.85; }
+        .emotion-tags-result { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+        .emotion-tag-result { padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); font-size: 14px; font-weight: 600; }
+
+        .result-content { padding: 20px; }
+        .healing-card-result {
+            background: var(--card-bg); border-radius: var(--border-radius);
+            padding: 24px 20px; margin-bottom: 16px; box-shadow: var(--shadow-md);
+        }
+        .healing-card-result h3 { font-size: 16px; margin-bottom: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+        .healing-card-result .quote {
+            background: linear-gradient(135deg, #fff5f5 0%, #fff0f6 100%);
+            border-radius: 12px; padding: 16px;
+            font-size: 15px; line-height: 1.6; color: var(--text-primary); border-left: 3px solid #f5576c;
+        }
+
+        .generate-blindbox-section {
+            background: var(--card-bg); border-radius: var(--border-radius);
+            padding: 24px 20px; box-shadow: var(--shadow-md); text-align: center;
+        }
+        .generate-blindbox-section h3 { font-size: 18px; margin-bottom: 8px; }
+        .generate-blindbox-section p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+        .generate-btn {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: var(--warm-gradient); color: white;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .generate-btn:active { transform: scale(0.97); }
+        .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .gift-icon { font-size: 18px; animation: giftWiggle 2s ease-in-out infinite; }
+        @keyframes giftWiggle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+            border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ========== 盲盒预览浮层 ========== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 200;
+            display: none; justify-content: center; align-items: flex-end;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            width: 100%; max-width: 420px; background: white;
+            border-radius: 24px 24px 0 0; padding: 24px 20px 32px;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 20px; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; border: none; font-size: 18px; cursor: pointer; }
+
+        .flip-card { width: 100%; height: 240px; perspective: 1000px; cursor: pointer; margin-bottom: 16px; }
+        .flip-card-inner {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
+            border-radius: 16px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 24px;
+        }
+        .flip-card-front { background: var(--warm-gradient); color: white; }
+        .flip-card-back { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: white; transform: rotateY(180deg); }
+        .flip-card-front .emoji { font-size: 48px; margin-bottom: 12px; }
+        .flip-card-front .keywords { font-size: 24px; font-weight: 700; text-align: center; }
+        .flip-card-back .healing-text { font-size: 16px; line-height: 1.6; text-align: center; font-style: italic; }
+        .flip-hint { text-align: center; font-size: 13px; color: var(--text-tertiary); margin-bottom: 20px; }
+
+        .modal-actions { display: flex; gap: 12px; }
+        .modal-actions button { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+        .btn-share { background: #07c160; color: white; }
+        .btn-save { background: #f3f4f6; color: var(--text-primary); }
+        .modal-actions button:active { transform: scale(0.97); }
+
+        /* ========== 分享成功页 ========== */
+        #shareSuccessPage {
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 40px 20px; background: var(--bg-color);
+        }
+        #shareSuccessPage.active { display: flex; }
+        .success-icon { font-size: 64px; margin-bottom: 20px; animation: successPop 0.5s ease-out; }
+        @keyframes successPop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .success-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; }
+        .success-card {
+            background: var(--card-bg); border-radius: var(--border-radius);
+            padding: 20px; width: 100%; max-width: 320px;
+            box-shadow: var(--shadow-md); margin-bottom: 24px;
+        }
+        .success-card .preview-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+        .success-card .preview-box {
+            background: var(--warm-gradient); border-radius: 12px;
+            padding: 24px; color: white; text-align: center;
+        }
+        .success-card .preview-box .preview-emoji { font-size: 36px; margin-bottom: 8px; }
+        .success-card .preview-box .preview-text { font-size: 16px; font-weight: 600; }
+        .back-home-btn {
+            width: 100%; max-width: 320px; padding: 14px; border: none; border-radius: 12px;
+            background: var(--primary-gradient); color: white;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+        }
+        .back-home-btn:active { transform: scale(0.97); }
+
+        /* ========== 拆开页（H5） ========== */
+        #openPage { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; }
+        .open-brand { text-align: center; padding: 40px 20px 20px; }
+        .open-brand .logo { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .open-brand .tagline { font-size: 13px; opacity: 0.7; }
+
+        .open-stage {
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 20px; position: relative;
+        }
+
+        /* 待拆提示 */
+        .pending-reveal { text-align: center; animation: pendingFadeIn 0.6s ease-out; }
+        @keyframes pendingFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pending-sender { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; }
+        .pending-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--heal-gradient); display: flex; justify-content: center; align-items: center; font-size: 36px; border: 3px solid rgba(255,255,255,0.25); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .pending-name { font-size: 18px; font-weight: 600; }
+        .pending-action { font-size: 15px; opacity: 0.7; }
+        .pending-notice {
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            border-radius: 16px; padding: 16px 24px; margin: 0 auto 28px; max-width: 260px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .pending-notice .notice-icon { font-size: 32px; margin-bottom: 8px; }
+        .pending-notice .notice-text { font-size: 16px; font-weight: 600; }
+        .pending-notice .notice-sub { font-size: 13px; opacity: 0.6; margin-top: 4px; }
+        .pending-box-thumb {
+            width: 120px; height: 120px; margin: 0 auto 28px;
+            background: var(--warm-gradient); border-radius: 20px;
+            display: flex; justify-content: center; align-items: center; font-size: 48px;
+            box-shadow: 0 8px 32px rgba(245, 87, 108, 0.35);
+            animation: boxFloat 2s ease-in-out infinite;
+        }
+        @keyframes boxFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-12px) scale(1.02); } }
+
+        /* 未拆开 */
+        .unopened-box { text-align: center; display: none; }
+        .unopened-box.active { display: block; animation: unopenedFadeIn 0.5s ease-out; }
+        @keyframes unopenedFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .box-visual { width: 160px; height: 160px; margin: 0 auto 24px; position: relative; }
+        .box-body {
+            width: 100%; height: 100%; background: var(--warm-gradient); border-radius: 24px;
+            display: flex; justify-content: center; align-items: center; font-size: 64px;
+            box-shadow: 0 12px 40px rgba(245, 87, 108, 0.4); position: relative;
+        }
+        .box-ribbon {
+            position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+            width: 48px; height: 48px; background: #ffd700; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 24px;
+            box-shadow: 0 4px 12px rgba(255,215,0,0.5);
+        }
+        .open-hint { font-size: 16px; opacity: 0.8; animation: pulseText 1.5s ease-in-out infinite; }
+        @keyframes pulseText { 0%, 100% { opacity: 0.8; } 50% { opacity: 0.4; } }
+        .open-btn {
+            margin-top: 32px; padding: 16px 48px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 30px; background: rgba(255,255,255,0.1); color: white;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+        .open-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.95); }
+
+        /* 拆开动效 */
+        .open-animation { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; justify-content: center; align-items: center; }
+        .open-animation.active { display: flex; }
+        .shake-box { font-size: 100px; animation: boxShake 0.8s ease-in-out; }
+        @keyframes boxShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-15deg); } 40% { transform: rotate(15deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(10deg); } }
+        .burst-particles { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+        .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #ffd700; opacity: 0; }
+        @keyframes particleBurst { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); } }
+
+        /* 内容展示 */
+        .content-reveal { display: none; text-align: center; padding: 20px; width: 100%; }
+        .content-reveal.active { display: block; animation: revealIn 0.8s ease-out; }
+        @keyframes revealIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .sender-avatar { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 12px; border: 3px solid rgba(255,255,255,0.3); background: var(--heal-gradient); display: flex; justify-content: center; align-items: center; font-size: 32px; }
+        .sender-name { font-size: 16px; opacity: 0.8; margin-bottom: 20px; }
+        .emotion-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; }
+        .emotion-tag { padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); font-size: 15px; font-weight: 600; }
+        .healing-card-dark { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 16px; padding: 20px; margin: 0 auto 24px; max-width: 320px; border: 1px solid rgba(255,255,255,0.1); }
+        .healing-card-dark p { font-size: 15px; line-height: 1.7; opacity: 0.95; }
+        .custom-msg { font-size: 13px; opacity: 0.6; margin-bottom: 24px; font-style: italic; }
+
+        .download-app-btn {
+            display: inline-block; padding: 16px 48px;
+            background: var(--warm-gradient); color: white;
+            border: none; border-radius: 30px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: var(--transition);
+            box-shadow: 0 8px 24px rgba(245, 87, 108, 0.4);
+        }
+        .download-app-btn:active { transform: scale(0.95); }
+        .download-hint { font-size: 12px; opacity: 0.5; margin-top: 12px; }
+
+        /* ========== 灵魂共鸣特效 ========== */
+        .soul-effect {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+            z-index: 300; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .soul-effect.active { display: flex; }
+        .soul-stars { position: absolute; width: 100%; height: 100%; overflow: hidden; }
+        .star { position: absolute; width: 3px; height: 3px; background: white; border-radius: 50%; animation: starFall linear infinite; }
+        @keyframes starFall { from { transform: translateY(-10px); opacity: 1; } to { transform: translateY(100vh); opacity: 0; } }
+        .soul-hearts { font-size: 80px; margin-bottom: 24px; position: relative; }
+        .soul-hearts .heart1, .soul-hearts .heart2 { display: inline-block; animation: heartMerge 2s ease-in-out infinite; }
+        .soul-hearts .heart1 { animation-delay: 0s; }
+        .soul-hearts .heart2 { animation-delay: 0.5s; }
+        @keyframes heartMerge { 0%, 100% { transform: scale(1) translateX(0); opacity: 0.6; } 50% { transform: scale(1.3) translateX(0); opacity: 1; } }
+        .soul-title { font-size: 36px; font-weight: 800; background: linear-gradient(90deg, #ffd700, #ffaa00, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; animation: soulGlow 2s ease-in-out infinite; }
+        @keyframes soulGlow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.3); } }
+        .soul-desc { font-size: 15px; opacity: 0.7; margin-bottom: 32px; }
+        .soul-medal { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ffd700, #ffaa00); display: flex; justify-content: center; align-items: center; font-size: 40px; box-shadow: 0 0 40px rgba(255,215,0,0.5); animation: medalSpin 1s ease-out; }
+        @keyframes medalSpin { from { transform: rotate(-180deg) scale(0); } to { transform: rotate(0) scale(1); } }
+        .soul-close { margin-top: 40px; padding: 12px 32px; border: 1px solid rgba(255,255,255,0.3); border-radius: 24px; background: transparent; color: white; font-size: 14px; cursor: pointer; }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(0,0,0,0.75); color: white;
+            padding: 12px 24px; border-radius: 24px; font-size: 14px;
+            z-index: 400; opacity: 0; pointer-events: none; transition: all 0.3s;
+        }
+        .toast.active { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* ========== 响应式 ========== */
+        @media (min-width: 420px) {
+            #app { max-width: 420px; margin: 0 auto; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+            .modal-overlay, .soul-effect, .toast { max-width: 420px; left: 50%; transform: translateX(-50%); }
+            .modal-overlay.active { transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- ========== 首页 ========== -->
+        <div class="page active" id="homePage">
+            <div class="home-header">
+                <h1>晚上好，小鹿</h1>
+                <p>今天的心情值得被温柔对待</p>
+            </div>
+            <div class="home-content">
+                <div class="diagnosis-card">
+                    <h3><span class="icon">&#x1f9e0;</span> 情绪诊断</h3>
+                    <p>花1分钟了解今天的情绪状态，生成专属情绪盲盒</p>
+                    <button class="diagnosis-btn" onclick="goToDiagnosis()">开始诊断</button>
+                </div>
+                <div class="history-card" onclick="showToast('查看历史记录')">
+                    <div class="history-icon">&#x1f381;</div>
+                    <div class="history-info">
+                        <div class="history-title">我的盲盒记录</div>
+                        <div class="history-desc">已生成 3 个盲盒 · 最近：焦虑但充满希望</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 诊断流程页 ========== -->
+        <div class="page" id="diagnosisPage">
+            <div class="page-header">
+                <button class="back-btn" onclick="backToHome()">&#x2190;</button>
+                <h2>情绪诊断</h2>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 25%;"></div>
+            </div>
+            <div class="question-card">
+                <div class="question-num" id="questionNum">问题 1/4</div>
+                <div class="question-text" id="questionText">此刻，如果用一句话形容你的心情，你会说？</div>
+                <div class="option-list" id="optionList"></div>
+            </div>
+            <button class="next-btn" id="nextBtn" disabled onclick="nextQuestion()">下一步</button>
+        </div>
+
+        <!-- ========== 诊断结果页 ========== -->
+        <div class="page" id="resultPage">
+            <div class="result-hero">
+                <div class="result-emoji" id="resultEmoji">&#x1f33f;</div>
+                <div class="result-title" id="resultTitle">焦虑但充满希望</div>
+                <div class="result-subtitle" id="resultSubtitle">你的内心正在经历一场蜕变</div>
+                <div class="emotion-tags-result" id="resultTags"></div>
+            </div>
+            <div class="result-content">
+                <div class="healing-card-result">
+                    <h3><span>&#x2728;</span> 专属疗愈卡</h3>
+                    <div class="quote" id="resultQuote">"每一份焦虑背后，都藏着一颗想要变得更好的心。深呼吸，你已经在路上了。"</div>
+                </div>
+                <div class="generate-blindbox-section">
+                    <h3>&#x1f381; 生成情绪盲盒</h3>
+                    <p>把你的情绪关键词和治愈文案装进盲盒，分享给好友</p>
+                    <button class="generate-btn" id="generateBtn" onclick="generateBlindBox()">
+                        <span class="gift-icon">&#x1f381;</span>
+                        <span id="generateBtnText">生成情绪盲盒</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 分享成功页 ========== -->
+        <div class="page" id="shareSuccessPage">
+            <div class="success-icon">&#x2705;</div>
+            <div class="success-title">分享成功</div>
+            <div class="success-desc">你的情绪盲盒已发送给好友<br>等待TA拆开这份神秘惊喜</div>
+            <div class="success-card">
+                <div class="preview-title">盲盒预览</div>
+                <div class="preview-box">
+                    <div class="preview-emoji">&#x1f381;</div>
+                    <div class="preview-text" id="successPreviewText">焦虑但充满希望</div>
+                </div>
+            </div>
+            <button class="back-home-btn" onclick="backToHomeFromSuccess()">返回首页</button>
+        </div>
+
+        <!-- ========== 拆开页（H5） ========== -->
+        <div class="page" id="openPage">
+            <div class="open-brand">
+                <div class="logo">&#x1f31f; 情绪星球</div>
+                <div class="tagline">每一个情绪都值得被看见</div>
+            </div>
+            <div class="open-stage">
+                <!-- 待拆提示 -->
+                <div class="pending-reveal" id="pendingReveal">
+                    <div class="pending-sender">
+                        <div class="pending-avatar" id="pendingAvatar">&#x1f98c;</div>
+                        <div class="pending-name" id="pendingName">小鹿</div>
+                        <div class="pending-action">送你一个情绪盲盒</div>
+                    </div>
+                    <div class="pending-notice">
+                        <div class="notice-icon">&#x1f381;</div>
+                        <div class="notice-text">你有一份神秘盲盒待拆</div>
+                        <div class="notice-sub">里面藏着TA的情绪关键词和一句治愈话</div>
+                    </div>
+                    <div class="pending-box-thumb">&#x1f381;</div>
+                    <button class="open-btn" onclick="showUnopenedBox()">拆开看看</button>
+                </div>
+                <!-- 未拆开 -->
+                <div class="unopened-box" id="unopenedBox">
+                    <div class="box-visual">
+                        <div class="box-body">&#x1f381;</div>
+                        <div class="box-ribbon">&#x1f380;</div>
+                    </div>
+                    <div class="open-hint">点击拆开盲盒</div>
+                    <button class="open-btn" onclick="openBlindBox()">点击拆开</button>
+                </div>
+                <!-- 拆开动效 -->
+                <div class="open-animation" id="openAnimation">
+                    <div class="shake-box">&#x1f381;</div>
+                    <div class="burst-particles" id="burstParticles"></div>
+                </div>
+                <!-- 内容展示 -->
+                <div class="content-reveal" id="contentReveal">
+                    <div class="sender-avatar" id="senderAvatar">&#x1f98c;</div>
+                    <div class="sender-name" id="senderName">小鹿 的情绪盲盒</div>
+                    <div class="emotion-tags" id="emotionTags"></div>
+                    <div class="healing-card-dark">
+                        <p id="healingText"></p>
+                    </div>
+                    <div class="custom-msg" id="customMsg"></div>
+                    <button class="download-app-btn" onclick="downloadApp()">&#x1f4f1; 下载App，生成我的盲盒</button>
+                    <div class="download-hint">和朋友互换情绪盲盒，解锁专属成就</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 盲盒预览浮层 ========== -->
+        <div class="modal-overlay" id="previewModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>我的情绪盲盒</h2>
+                    <button class="modal-close" onclick="closePreview()">&#x2715;</button>
+                </div>
+                <div class="flip-card" id="flipCard" onclick="flipCard()">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="emoji">&#x1f381;</div>
+                            <div class="keywords" id="frontKeywords">焦虑但充满希望</div>
+                        </div>
+                        <div class="flip-card-back">
+                            <div class="healing-text" id="backHealingText">每一份焦虑背后，都藏着一颗想要变得更好的心。深呼吸，你已经在路上了。</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flip-hint">&#x1f503; 点击卡片翻转查看背面</div>
+                <div class="modal-actions">
+                    <button class="btn-share" onclick="shareToWeChat()">&#x1f4e4; 分享给好友</button>
+                    <button class="btn-save" onclick="saveImage()">&#x1f4be; 保存图片</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 灵魂共鸣特效 ========== -->
+        <div class="soul-effect" id="soulEffect" onclick="closeSoulEffect()">
+            <div class="soul-stars" id="soulStars"></div>
+            <div class="soul-hearts">
+                <span class="heart1">&#x1f49c;</span>
+                <span class="heart2">&#x1f49c;</span>
+            </div>
+            <div class="soul-title">灵魂共鸣</div>
+            <div class="soul-desc">你们的情绪匹配度高达 92%</div>
+            <div class="soul-medal">&#x1f3c6;</div>
+            <button class="soul-close">点击收下勋章</button>
+        </div>
+
+        <!-- ========== Toast ========== -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // ========== 模拟数据 ==========
+        const mockData = {
+            currentUser: { nickname: "小鹿", avatar: "&#x1f98c;" },
+            blindBox: {
+                ownerName: "小鹿", ownerAvatar: "&#x1f98c;",
+                emotionKeywords: ["焦虑", "但充满希望"],
+                healingText: "每一份焦虑背后，都藏着一颗想要变得更好的心。深呼吸，你已经在路上了。",
+                customMessage: "今天有点累，但想到明天就又有力量了。"
+            },
+            matchResult: { matchLevel: "soul", matchScore: 92 },
+            healingPool: [
+                "每一份焦虑背后，都藏着一颗想要变得更好的心。深呼吸，你已经在路上了。",
+                "今天的阴霾只是暂时的，明天的阳光正在路上等你。",
+                "允许自己偶尔脆弱，那是心灵在呼吸。",
+                "你不需要完美，你已经足够好。",
+                "慢慢来，比较快。给自己多一点耐心。",
+                "情绪就像天气，阴雨天总会过去，彩虹总会出现。",
+                "累了就休息，不是放弃，是为了走得更远。",
+                "你的感受很重要，不要忽视内心的声音。"
+            ]
+        };
+
+        // ========== 诊断题目 ==========
+        const diagnosisQuestions = [
+            {
+                text: "此刻，如果用一句话形容你的心情，你会说？",
+                options: ["平静如水，没什么特别的", "有点焦虑，但还在努力", "充满能量，对未来很期待", "有点低落，需要一点温暖"]
+            },
+            {
+                text: "今天最让你在意的事情是什么？",
+                options: ["工作或学习的压力", "人际关系的小摩擦", "对未来的不确定感", "其实没什么特别的"]
+            },
+            {
+                text: "如果现在有一件小事能让你开心，你希望是？",
+                options: ["收到一条暖心的消息", "吃到了好吃的食物", "完成了一件拖延的事", "一个人安静地待会儿"]
+            },
+            {
+                text: "你对明天的自己有什么期待？",
+                options: ["希望能睡个好觉", "希望能更有行动力", "希望能遇到好事", "希望能保持现状就好"]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let selectedOptions = [];
+        let diagnosisResult = null;
+
+        // ========== 页面切换 ==========
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 2000);
+        }
+
+        // ========== 诊断流程 ==========
+        function goToDiagnosis() {
+            currentQuestionIndex = 0;
+            selectedOptions = [];
+            showPage('diagnosisPage');
+            renderQuestion();
+        }
+
+        function backToHome() {
+            showPage('homePage');
+        }
+
+        function renderQuestion() {
+            const q = diagnosisQuestions[currentQuestionIndex];
+            document.getElementById('questionNum').textContent = `问题 ${currentQuestionIndex + 1}/${diagnosisQuestions.length}`;
+            document.getElementById('questionText').textContent = q.text;
+            document.getElementById('progressFill').style.width = `${((currentQuestionIndex + 1) / diagnosisQuestions.length) * 100}%`;
+
+            const list = document.getElementById('optionList');
+            list.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const item = document.createElement('div');
+                item.className = 'option-item';
+                item.onclick = () => selectOption(item, idx);
+                item.innerHTML = `<div class="option-dot"></div><span>${opt}</span>`;
+                list.appendChild(item);
+            });
+
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = true;
+            nextBtn.textContent = currentQuestionIndex === diagnosisQuestions.length - 1 ? '查看结果' : '下一步';
+        }
+
+        function selectOption(el, idx) {
+            document.querySelectorAll('#optionList .option-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedOptions[currentQuestionIndex] = idx;
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < diagnosisQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                computeDiagnosisResult();
+                showResultPage();
+            }
+        }
+
+        function computeDiagnosisResult() {
+            const sum = selectedOptions.reduce((a, b) => a + b, 0);
+            const results = [
+                { title: "平静且满足", subtitle: "你的内心如湖水般宁静", emoji: "&#x1f30a;", keywords: ["平静", "满足", "安宁"], quote: "允许自己偶尔脆弱，那是心灵在呼吸。" },
+                { title: "焦虑但充满希望", subtitle: "你的内心正在经历一场蜕变", emoji: "&#x1f33f;", keywords: ["焦虑", "期待", "迷茫", "希望"], quote: "每一份焦虑背后，都藏着一颗想要变得更好的心。深呼吸，你已经在路上了。" },
+                { title: "充满活力", subtitle: "你的能量正在感染周围的人", emoji: "&#x2600;", keywords: ["开心", "期待", "热情", "能量"], quote: "今天的阴霾只是暂时的，明天的阳光正在路上等你。" },
+                { title: "需要被拥抱", subtitle: "没关系，低落也是情绪的一部分", emoji: "&#x1f3e1;", keywords: ["疲惫", "低落", "温柔", "治愈"], quote: "你不需要完美，你已经足够好。" }
+            ];
+            diagnosisResult = results[sum % results.length];
+            mockData.blindBox.emotionKeywords = diagnosisResult.keywords.slice(0, 2);
+            mockData.blindBox.healingText = diagnosisResult.quote;
+        }
+
+        function showResultPage() {
+            showPage('resultPage');
+            document.getElementById('resultEmoji').innerHTML = diagnosisResult.emoji;
+            document.getElementById('resultTitle').textContent = diagnosisResult.title;
+            document.getElementById('resultSubtitle').textContent = diagnosisResult.subtitle;
+
+            const tagsContainer = document.getElementById('resultTags');
+            tagsContainer.innerHTML = '';
+            diagnosisResult.keywords.forEach(kw => {
+                const tag = document.createElement('div');
+                tag.className = 'emotion-tag-result';
+                tag.textContent = kw;
+                tagsContainer.appendChild(tag);
+            });
+
+            document.getElementById('resultQuote').textContent = '"' + diagnosisResult.quote + '"';
+        }
+
+        // ========== 盲盒生成与分享 ==========
+        function generateBlindBox() {
+            const btn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('generateBtnText');
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> 生成中...';
+            setTimeout(() => {
+                btn.disabled = false;
+                btnText.textContent = '生成情绪盲盒';
+                document.getElementById('frontKeywords').textContent = mockData.blindBox.emotionKeywords.join('');
+                document.getElementById('backHealingText').textContent = mockData.blindBox.healingText;
+                document.getElementById('previewModal').classList.add('active');
+            }, 1200);
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.remove('active');
+            document.getElementById('flipCard').classList.remove('flipped');
+        }
+
+        function flipCard() {
+            document.getElementById('flipCard').classList.toggle('flipped');
+        }
+
+        function shareToWeChat() {
+            showToast('已唤起微信分享');
+            setTimeout(() => {
+                closePreview();
+                document.getElementById('successPreviewText').textContent = mockData.blindBox.emotionKeywords.join('');
+                showPage('shareSuccessPage');
+            }, 800);
+        }
+
+        function saveImage() {
+            showToast('海报已保存到相册');
+        }
+
+        function backToHomeFromSuccess() {
+            showPage('homePage');
+        }
+
+        // ========== 拆开页（H5） ==========
+        function showUnopenedBox() {
+            document.getElementById('pendingReveal').style.display = 'none';
+            document.getElementById('unopenedBox').classList.add('active');
+        }
+
+        function openBlindBox() {
+            const unopened = document.getElementById('unopenedBox');
+            const animation = document.getElementById('openAnimation');
+            const particles = document.getElementById('burstParticles');
+            const reveal = document.getElementById('contentReveal');
+
+            unopened.classList.remove('active');
+            animation.classList.add('active');
+
+            particles.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const angle = (Math.PI * 2 * i) / 20;
+                const dist = 100 + Math.random() * 150;
+                p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+                p.style.left = '50%';
+                p.style.top = '50%';
+                p.style.animation = `particleBurst 1s ease-out ${0.5 + Math.random() * 0.3}s forwards`;
+                p.style.background = ['#ffd700', '#ff6b6b', '#4ecdc4', '#a8e6cf'][Math.floor(Math.random() * 4)];
+                particles.appendChild(p);
+            }
+
+            setTimeout(() => {
+                animation.classList.remove('active');
+                reveal.classList.add('active');
+                document.getElementById('senderAvatar').innerHTML = mockData.blindBox.ownerAvatar;
+                document.getElementById('senderName').textContent = mockData.blindBox.ownerName + ' 的情绪盲盒';
+                document.getElementById('healingText').textContent = mockData.blindBox.healingText;
+                document.getElementById('customMsg').textContent = '留言：' + mockData.blindBox.customMessage;
+
+                const tagsContainer = document.getElementById('emotionTags');
+                tagsContainer.innerHTML = '';
+                mockData.blindBox.emotionKeywords.forEach(kw => {
+                    const tag = document.createElement('div');
+                    tag.className = 'emotion-tag';
+                    tag.textContent = kw;
+                    tagsContainer.appendChild(tag);
+                });
+
+                // 延迟触发灵魂共鸣
+                setTimeout(() => {
+                    if (mockData.matchResult.matchLevel === 'soul') {
+                        showSoulEffect();
+                    }
+                }, 2500);
+            }, 1800);
+        }
+
+        function showSoulEffect() {
+            const effect = document.getElementById('soulEffect');
+            const stars = document.getElementById('soulStars');
+            effect.classList.add('active');
+            stars.innerHTML = '';
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDuration = (2 + Math.random() * 3) + 's';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                stars.appendChild(star);
+            }
+        }
+
+        function closeSoulEffect() {
+            document.getElementById('soulEffect').classList.remove('active');
+        }
+
+        function downloadApp() {
+            showToast('跳转应用商店下载App...');
+        }
+    </script>
+</body>
+</html>
