@@ -481,10 +481,59 @@
         .feed-card {
             background: var(--white);
             border-radius: var(--radius-md);
-            padding: 16px 20px;
+            padding: 16px 20px 16px 24px;
             margin-bottom: 12px;
+            margin-left: 0;
             box-shadow: var(--shadow-soft);
             animation: slideUp 0.4s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feed-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .feed-card.type-morning::before {
+            background: linear-gradient(180deg, #FFD700, #FFA500);
+        }
+
+        .feed-card.type-goodthings::before {
+            background: linear-gradient(180deg, var(--mint-green), #6BB8A8);
+        }
+
+        .feed-card.type-mood::before {
+            background: linear-gradient(180deg, var(--lavender), #B088D8);
+        }
+
+        .feed-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .feed-type-badge.morning {
+            background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+            color: #F57C00;
+        }
+
+        .feed-type-badge.goodthings {
+            background: linear-gradient(135deg, #E8F5F2, #D0EBE5);
+            color: #2E8B57;
+        }
+
+        .feed-type-badge.mood {
+            background: linear-gradient(135deg, #F3E5F5, #E8D5F5);
+            color: #7B1FA2;
         }
 
         @keyframes slideUp {
@@ -1205,7 +1254,7 @@
                 </div>
 
                 <!-- 心情碎碎念 -->
-                <div class="daily-task completed" id="nightTask">
+                <div class="daily-task" id="nightTask">
                     <div class="task-time-badge badge-night">🌙 21:00 晚间时光</div>
                     <div class="task-title">今日心情碎碎念</div>
                     <div class="task-desc">说说今天的心情，小组会温柔接住你的每一份情绪~</div>
@@ -1217,11 +1266,11 @@
                             <div class="mood-emoji" data-mood="😔" onclick="selectMood(this)">😔</div>
                             <div class="mood-emoji" data-mood="😤" onclick="selectMood(this)">😤</div>
                         </div>
-                        <textarea class="mood-textarea" id="moodInput" placeholder="今天有什么想分享的心情呢..." maxlength="200">今天天气真好，和小组成员一起打卡感觉很温暖，希望我们都能坚持到最后！</textarea>
+                        <textarea class="mood-textarea" id="moodInput" placeholder="今天有什么想分享的心情呢..." maxlength="200"></textarea>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                            <span class="char-count"><span id="charCount">38</span>/200</span>
-                            <button class="task-action-btn btn-completed" style="width: auto; padding: 10px 24px; font-size: 14px;" onclick="submitMood()">
-                                <span class="completed-check">已分享</span>
+                            <span class="char-count"><span id="charCount">0</span>/200</span>
+                            <button class="task-action-btn btn-primary" style="width: auto; padding: 10px 24px; font-size: 14px;" id="moodSubmitBtn" onclick="submitMood()">
+                                分享心情 🌙
                             </button>
                         </div>
                     </div>
@@ -1462,7 +1511,7 @@
             tasks: {
                 morning: false,
                 noon: false,
-                night: true
+                night: false
             },
             currentStreak: 7,
             energyBonus: false
@@ -1526,13 +1575,35 @@
             const list = document.getElementById('feedList');
             list.innerHTML = '';
 
+            // 类型配置
+            const typeConfig = {
+                morning: { 
+                    class: 'type-morning', 
+                    badgeClass: 'morning', 
+                    label: '早安问候', 
+                    emoji: '🌅' 
+                },
+                goodthings: { 
+                    class: 'type-goodthings', 
+                    badgeClass: 'goodthings', 
+                    label: '三件好事', 
+                    emoji: '✨' 
+                },
+                mood: { 
+                    class: 'type-mood', 
+                    badgeClass: 'mood', 
+                    label: '心情碎碎念', 
+                    emoji: '💭' 
+                }
+            };
+
             mockData.feeds.forEach((feed, index) => {
                 const member = mockData.members.find(m => m.id === feed.userId);
                 const memberIndex = mockData.members.findIndex(m => m.id === feed.userId);
-                const typeEmoji = feed.type === 'morning' ? '🌅' : feed.type === 'goodthings' ? '✨' : '💭';
+                const config = typeConfig[feed.type] || typeConfig.mood;
                 
                 const card = document.createElement('div');
-                card.className = 'feed-card';
+                card.className = `feed-card ${config.class}`;
                 card.style.animationDelay = `${index * 0.1}s`;
                 card.innerHTML = `
                     <div class="feed-header">
@@ -1540,8 +1611,11 @@
                             ${member.avatar}
                         </div>
                         <div class="feed-meta">
-                            <div class="feed-name">${member.name} ${member.isLeader ? '<span style="font-size:12px;">👑</span>' : ''}</div>
-                            <div class="feed-time">${typeEmoji} ${feed.time}</div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                <span class="feed-name">${member.name} ${member.isLeader ? '<span style="font-size:12px;">👑</span>' : ''}</span>
+                                <span class="feed-type-badge ${config.badgeClass}">${config.emoji} ${config.label}</span>
+                            </div>
+                            <div class="feed-time">${feed.time}</div>
                         </div>
                     </div>
                     <div class="feed-content">${feed.content.replace(/\n/g, '<br>')}</div>
@@ -1718,7 +1792,52 @@
 
         // ==================== 提交心情 ====================
         function submitMood() {
+            const moodInput = document.getElementById('moodInput');
+            const content = moodInput.value.trim();
+            const selectedMood = document.querySelector('.mood-emoji.selected');
+            
+            if (!content) {
+                showToast('请写下你今天的心情哦~');
+                return;
+            }
+
+            // 获取选中的心情emoji
+            const moodEmoji = selectedMood ? selectedMood.dataset.mood : '😊';
+            
+            // 标记任务完成
+            const task = document.getElementById('nightTask');
+            task.classList.add('completed');
+            
+            // 更新按钮状态
+            const btn = document.getElementById('moodSubmitBtn');
+            btn.className = 'task-action-btn btn-completed';
+            btn.style.width = 'auto';
+            btn.style.padding = '10px 24px';
+            btn.style.fontSize = '14px';
+            btn.innerHTML = '<span class="completed-check">已分享</span>';
+            btn.disabled = true;
+            
+            // 禁用输入框和表情选择
+            moodInput.disabled = true;
+            moodInput.style.opacity = '0.7';
+            document.querySelectorAll('.mood-emoji').forEach(e => {
+                e.style.pointerEvents = 'none';
+                e.style.opacity = '0.7';
+            });
+
+            mockData.tasks.night = true;
             showToast('心情已分享，伙伴们会看到的~ 🌙');
+            
+            // 添加动态
+            addFeed({
+                id: Date.now(),
+                userId: mockData.currentUser.id,
+                content: `${moodEmoji} ${content}`,
+                time: getCurrentTime(),
+                likes: 0,
+                liked: false,
+                type: 'mood'
+            });
         }
 
         // ==================== 添加动态 ====================
