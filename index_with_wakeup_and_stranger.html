@@ -494,12 +494,6 @@
             <button class="tip-close" onclick="document.getElementById('wechatTip').classList.remove('active')">&#x2715;</button>
         </div>
 
-        <!-- ========== Demo调试条 ========== -->
-        <div class="wechat-tip" id="demoTip" style="background:linear-gradient(90deg,#667eea,#764ba2);display:flex;">
-            <div class="tip-text">&#x1f9ea; Demo模式：这是新增唤醒功能的体验版本</div>
-            <button class="tip-close" onclick="document.getElementById('demoTip').classList.remove('active')">&#x2715;</button>
-        </div>
-
         <!-- ========== 首页 ========== -->
         <div class="page active" id="homePage">
             <div class="home-header">
@@ -511,12 +505,6 @@
                     <h3><span class="icon">&#x1f9e0;</span> 情绪诊断</h3>
                     <p>花1分钟了解今天的情绪状态，生成专属情绪盲盒</p>
                     <button class="diagnosis-btn" onclick="goToDiagnosis()">开始诊断</button>
-                </div>
-                <!-- Demo快捷入口：模拟从微信分享链接进入拆开页 -->
-                <div class="diagnosis-card" style="background:linear-gradient(135deg,#fff5f5,#fff0f6);border:2px dashed #f5576c;cursor:pointer;" onclick="enterOpenPageDemo()">
-                    <h3><span class="icon">&#x1f381;</span> 【Demo】模拟好友拆开页</h3>
-                    <p style="font-size:13px;color:var(--text-secondary);">点击直接体验「待拆提示 → 拆开 → 唤醒引导 → 下载页」完整链路</p>
-                    <div style="margin-top:10px;font-size:12px;color:#f5576c;font-weight:600;">点击体验唤醒功能 &#x2192;</div>
                 </div>
                 <div class="history-card" onclick="showToast('查看历史记录')">
                     <div class="history-icon">&#x1f381;</div>
@@ -1249,20 +1237,6 @@
             currentFlow = 'normal';
             selectedMood = null;
             showPage('homePage');
-        }
-
-        // ========== Demo快捷入口 ==========
-        function enterOpenPageDemo() {
-            currentFlow = 'normal';
-            // 重置拆开页状态
-            document.getElementById('pendingReveal').style.display = 'block';
-            document.getElementById('unopenedBox').classList.remove('active');
-            document.getElementById('openAnimation').classList.remove('active');
-            document.getElementById('contentReveal').classList.remove('active');
-            // 初始化数据
-            document.getElementById('pendingAvatar').innerHTML = mockData.blindBox.ownerAvatar;
-            document.getElementById('pendingName').textContent = mockData.blindBox.ownerName;
-            showPage('openPage');
         }
 
         // ========== 唤醒与下载引导 ==========
